@@ -180,10 +180,12 @@ class DashboardBuilder(BaseVisualizer):
             # HTML 템플릿
             html_template = self._get_html_template()
 
-            # 현재 연도 및 타임스탬프 추출
-            from datetime import datetime
+            # 현재 연도 및 타임스탬프 추출 (한국 시간)
+            from datetime import datetime, timezone, timedelta
 
-            now = datetime.now()
+            # 한국 시간 (UTC+9) 설정
+            kst = timezone(timedelta(hours=9))
+            now = datetime.now(kst)
             current_year = now.year
             timestamp = now.strftime("%Y년 %m월 %d일 %H:%M:%S")
 
