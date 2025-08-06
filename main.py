@@ -316,7 +316,9 @@ class FactoryDefectPredictionSystem:
         logger.info("🔄 모델 재학습 시작")
 
         try:
-            data = self.data_loader.load_defect_data()
+            # Teams 데이터 로드 (동적 데이터)
+            logger.info("📊 Teams에서 불량 데이터 로드 중...")
+            data = self.teams_loader.load_defect_data_from_teams()
             data["keywords"] = data["상세불량내용"].apply(
                 self.data_loader.preprocess_text
             )
