@@ -1,4 +1,4 @@
-name: Daily Dashboard Update
+name: Daily Defect Analysis
 
 on:
   # Push 시 자동 실행
