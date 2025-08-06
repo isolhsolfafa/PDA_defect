@@ -346,39 +346,18 @@ class FactoryDefectPredictionSystem:
                     percentage = (count / len(data)) * 100
                     logger.info(f"   - {defect_type}: {count}건 ({percentage:.1f}%)")
             
-            # GitHub 업로드 시도
+            # 모델 파일 저장 완료 로깅
             logger.info("=" * 60)
-            logger.info("🚀 GitHub 업로드 시작")
+            logger.info("💾 모델 저장 완료")
             logger.info("=" * 60)
             
-            try:
-                # 모델 파일 업로드 확인
-                model_path = "models/defect_predictor.pkl"
-                if os.path.exists(model_path):
-                    model_size = os.path.getsize(model_path)
-                    logger.info(f"📁 모델 파일 확인: {model_path} ({model_size:,} bytes)")
-                    
-                    # GitHub 업로드 시도 (실제 업로드는 환경변수에 따라)
-                    from config import DISABLE_GITHUB_UPLOAD
-                    if not DISABLE_GITHUB_UPLOAD:
-                        logger.info("🔄 GitHub 업로드 진행 중...")
-                        try:
-                            # 모델 파일을 실제로 GitHub에 업로드
-                            upload_success = self._upload_model_to_github(model_path)
-                            if upload_success:
-                                logger.info("✅ GitHub 업로드 완료")
-                            else:
-                                logger.error("❌ GitHub 업로드 실패")
-                        except Exception as upload_err:
-                            logger.error(f"❌ GitHub 업로드 중 오류: {upload_err}")
-                    else:
-                        logger.info("⚠️ GitHub 업로드 비활성화됨 (개발 모드)")
-                else:
-                    logger.warning(f"⚠️ 모델 파일을 찾을 수 없음: {model_path}")
-                    
-            except Exception as upload_error:
-                logger.error(f"❌ GitHub 업로드 실패: {upload_error}")
-                # 업로드 실패해도 모델 학습은 성공으로 처리
+            model_path = "models/defect_predictor.pkl"
+            if os.path.exists(model_path):
+                model_size = os.path.getsize(model_path)
+                logger.info(f"📁 모델 파일 저장: {model_path} ({model_size:,} bytes)")
+                logger.info("💡 모델 파일은 로컬에만 저장됩니다 (GitHub 업로드 안함)")
+            else:
+                logger.warning(f"⚠️ 모델 파일을 찾을 수 없음: {model_path}")
             
             logger.info("=" * 60)
             logger.info("✅ 모델 재학습 전체 프로세스 완료!")
@@ -388,60 +367,6 @@ class FactoryDefectPredictionSystem:
             logger.error(f"❌ 모델 재학습 실패: {e}")
             raise
 
-    def _upload_model_to_github(self, model_path: str) -> bool:
-        """모델 파일을 GitHub에 업로드"""
-        try:
-            import base64
-            import requests
-            
-            # 모델 파일을 바이너리로 읽기
-            with open(model_path, 'rb') as f:
-                model_content = f.read()
-            
-            # Base64 인코딩
-            b64_content = base64.b64encode(model_content).decode('utf-8')
-            
-            # GitHub API 직접 호출 (바이너리 파일용)
-            username = self.uploader.config.username_1
-            repo = self.uploader.config.repo_1
-            branch = self.uploader.config.branch_1
-            token = self.uploader.config.token_1
-            
-            url = f"https://api.github.com/repos/{username}/{repo}/contents/{model_path}"
-            headers = {
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-            }
-            
-            # 기존 파일 확인
-            response = requests.get(url, headers=headers)
-            logger.info(f"GitHub GET 응답 상태: {response.status_code}")
-            
-            sha = response.json().get("sha") if response.status_code == 200 else None
-            
-            # 업로드 페이로드 구성
-            payload = {
-                "message": "🤖 ML 모델 자동 업데이트 (재학습 완료)",
-                "content": b64_content,
-                "branch": branch
-            }
-            if sha:
-                payload["sha"] = sha
-            
-            # 업로드 실행
-            put_response = requests.put(url, headers=headers, json=payload)
-            
-            if put_response.status_code in (200, 201):
-                logger.info(f"✅ GitHub 업로드 성공: {username}/{repo}/{model_path}")
-                return True
-            else:
-                logger.error(f"❌ GitHub 업로드 실패: {put_response.status_code}")
-                logger.error(f"응답: {put_response.text}")
-                return False
-            
-        except Exception as e:
-            logger.error(f"❌ 모델 업로드 중 오류: {e}")
-            return False
 
     def _load_html_template(self) -> str:
         """HTML 템플릿 로드"""
