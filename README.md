@@ -12,7 +12,7 @@ Microsoft Teams 연동 및 머신러닝을 활용한 공장 불량 예측 및 �
 ### 🔍 **데이터 정합성 검증 (Data Integrity Validation)**
 ```bash
 # 데이터 정합성 검증 스크립트 실행
-python -m scripts.data_validation
+python -m scripts.data_validatio
 
 # 7월 생산물량 vs 실제 불량 데이터 매칭 검증
 python -m scripts.production_validation
