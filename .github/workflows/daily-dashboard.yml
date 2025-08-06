@@ -1,6 +1,21 @@
 name: Daily Dashboard Update
 
 on:
+  # Push 시 자동 실행
+  push:
+    branches: [ main ]
+    paths:
+      - 'refactored_analysis/**'
+      - 'run_refactored_dashboard.py'
+      - 'config.py'
+      - 'data/**'
+      - 'output/**'
+      - 'utils/**'
+  
+  # Pull Request 시 실행
+  pull_request:
+    branches: [ main ]
+  
   schedule:
     # 평일(월-금) 오후 5시 (UTC 08:00 = KST 17:00)
     - cron: '0 8 * * 1-5'
@@ -48,7 +63,7 @@ jobs:
         python run_refactored_dashboard.py
         
     - name: Upload dashboard artifacts (optional)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: dashboard-files
