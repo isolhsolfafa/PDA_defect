@@ -318,7 +318,7 @@ class FactoryDefectPredictionSystem:
         try:
             # Teams 데이터 로드 (동적 데이터)
             logger.info("📊 Teams에서 불량 데이터 로드 중...")
-            data = self.teams_loader.load_defect_data_from_teams()
+            data = self.teams_loader.load_data_with_fallback()
             data["keywords"] = data["상세불량내용"].apply(
                 self.data_loader.preprocess_text
             )
