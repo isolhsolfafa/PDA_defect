@@ -45,16 +45,32 @@ jobs:
     - name: Create Google Sheets credentials
       run: |
         mkdir -p credentials
-        echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > credentials/gst-manegemnet-70faf8ce1bff.json
+        echo "🔧 Secret 길이: ${#GOOGLE_SERVICE_ACCOUNT_JSON}"
+        echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' | base64 -d > credentials/gst-manegemnet-70faf8ce1bff.json
         # JSON 파일 검증
+        echo "📂 생성된 파일 정보:"
+        ls -la credentials/gst-manegemnet-70faf8ce1bff.json
+        echo "📄 파일 크기: $(wc -c < credentials/gst-manegemnet-70faf8ce1bff.json) bytes"
+        
         if [ -s credentials/gst-manegemnet-70faf8ce1bff.json ]; then
           echo "✅ Google Sheets 인증 파일 생성 완료"
+          echo "🔍 JSON 파일 첫 3줄:"
           head -3 credentials/gst-manegemnet-70faf8ce1bff.json
+          echo "🔍 JSON 유효성 검사:"
+          if python -m json.tool credentials/gst-manegemnet-70faf8ce1bff.json > /dev/null 2>&1; then
+            echo "✅ JSON 형식 유효"
+          else
+            echo "❌ JSON 형식 오류"
+            cat credentials/gst-manegemnet-70faf8ce1bff.json
+            exit 1
+          fi
         else
           echo "❌ Google Sheets 인증 파일이 비어있습니다"
           ls -la credentials/
           exit 1
         fi
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         
     - name: Set up environment variables
       env:
