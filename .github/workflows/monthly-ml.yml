@@ -1,0 +1,58 @@
+name: Monthly ML Model Retrain
+
+on:
+  schedule:
+    # 매월 1일 오전 8시 (UTC 23:00 = KST 08:00)
+    - cron: '0 23 1 * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  retrain-model:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Set up environment variables
+      env:
+        TEAMS_TENANT_ID: ${{ secrets.TEAMS_TENANT_ID }}
+        TEAMS_CLIENT_ID: ${{ secrets.TEAMS_CLIENT_ID }}
+        TEAMS_CLIENT_SECRET: ${{ secrets.TEAMS_CLIENT_SECRET }}
+        TEAMS_TEAM_ID: ${{ secrets.TEAMS_TEAM_ID }}
+        GH_TOKEN_1: ${{ secrets.GH_TOKEN_1 }}
+        GH_TOKEN_2: ${{ secrets.GH_TOKEN_2 }}
+      run: |
+        echo "TEAMS_TENANT_ID=$TEAMS_TENANT_ID" >> $GITHUB_ENV
+        echo "TEAMS_CLIENT_ID=$TEAMS_CLIENT_ID" >> $GITHUB_ENV
+        echo "TEAMS_CLIENT_SECRET=$TEAMS_CLIENT_SECRET" >> $GITHUB_ENV
+        echo "TEAMS_TEAM_ID=$TEAMS_TEAM_ID" >> $GITHUB_ENV
+        echo "GH_TOKEN_1=$GH_TOKEN_1" >> $GITHUB_ENV
+        echo "GH_TOKEN_2=$GH_TOKEN_2" >> $GITHUB_ENV
+        
+    - name: Run ML model retrain
+      run: |
+        echo "🤖 Starting monthly ML model retrain..."
+        python run_main.py --mode retrain
+        
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: ml-model-files
+        path: |
+          models/
+          logs/
+        retention-days: 30

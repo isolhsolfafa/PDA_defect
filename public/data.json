@@ -1,0 +1,496 @@
+{
+  "predictions": [
+    {
+      "모델": "GAIA-II DUAL",
+      "검출단계": "가압검사",
+      "부품": "REDUCER DOUBLE Y UNION",
+      "예상불량률": 100.0,
+      "키워드": "삽입부",
+      "불량유형": "부품불량",
+      "누적": 23,
+      "제안": "체결 토크 표준화",
+      "근거": "근거: 체결 불량, 누설, 가공 정밀도",
+      "예상효과": "불량률 50.0%p 감소 예상",
+      "우선순위": "IMMEDIATE"
+    },
+    {
+      "모델": "GAIA-P",
+      "검출단계": "가압검사",
+      "부품": "REDUCER DOUBLE Y UNION",
+      "예상불량률": 98.0,
+      "키워드": "삽입부",
+      "불량유형": "부품불량",
+      "누적": 23,
+      "제안": "체결 토크 표준화",
+      "근거": "근거: 체결 불량, 누설, 가공 정밀도",
+      "예상효과": "불량률 50.0%p 감소 예상",
+      "우선순위": "IMMEDIATE"
+    },
+    {
+      "모델": "GAIA-P DUAL",
+      "검출단계": "가압검사",
+      "부품": "MALE CONNECTOR",
+      "예상불량률": 9.0,
+      "키워드": "연결",
+      "불량유형": "기구작업불량",
+      "누적": 25,
+      "제안": "N2 가압 압력 및 시간 표준화",
+      "근거": "근거: N2 가압 불량, Tube 삽입 불량, Teflon 작업 불량, Fitting 체결 불량",
+      "예상효과": "불량률 4.5%p 감소 예상",
+      "우선순위": "URGENT"
+    },
+    {
+      "모델": "GAIA-P DUAL",
+      "검출단계": "제조품질검사",
+      "부품": "BULKHEAD UNION",
+      "예상불량률": 8.0,
+      "키워드": "스티커, 부착",
+      "불량유형": "기구작업불량",
+      "누적": 13,
+      "제안": "개선 검토 필요",
+      "근거": "근거: 추가 분석 필요",
+      "예상효과": "효과 분석 중",
+      "우선순위": "NORMAL"
+    },
+    {
+      "모델": "SWS-I",
+      "검출단계": "가압검사",
+      "부품": "MALE ELBOW",
+      "예상불량률": 4.0,
+      "키워드": "부족",
+      "불량유형": "기구작업불량",
+      "누적": 45,
+      "제안": "개선 검토 필요",
+      "근거": "근거: 추가 분석 필요",
+      "예상효과": "효과 분석 중",
+      "우선순위": "NORMAL"
+    }
+  ],
+  "advanced_analysis": {
+    "failure_patterns": {
+      "top_patterns": [
+        {
+          "pattern": "7_0_68",
+          "frequency": 47,
+          "percentage": 11.270983213429256,
+          "keywords": [
+            [
+              "Speed",
+              47
+            ],
+            [
+              "Controller",
+              47
+            ],
+            [
+              "Leak",
+              47
+            ],
+            [
+              "(PFA)",
+              30
+            ],
+            [
+              "(우레탄)",
+              17
+            ]
+          ],
+          "risk_level": "HIGH"
+        },
+        {
+          "pattern": "16_1_86",
+          "frequency": 17,
+          "percentage": 4.07673860911271,
+          "keywords": [],
+          "risk_level": "MEDIUM"
+        },
+        {
+          "pattern": "6_2_43",
+          "frequency": 13,
+          "percentage": 3.117505995203837,
+          "keywords": [
+            [
+              "MALE",
+              13
+            ],
+            [
+              "ELBOW",
+              13
+            ],
+            [
+              "Fitting",
+              13
+            ],
+            [
+              "nut",
+              13
+            ],
+            [
+              "Water",
+              13
+            ]
+          ],
+          "risk_level": "MEDIUM"
+        },
+        {
+          "pattern": "7_0_42",
+          "frequency": 10,
+          "percentage": 2.3980815347721824,
+          "keywords": [
+            [
+              "Male",
+              9
+            ],
+            [
+              "N2",
+              8
+            ],
+            [
+              "Connector",
+              8
+            ],
+            [
+              "Teflon",
+              8
+            ],
+            [
+              "부족",
+              8
+            ]
+          ],
+          "risk_level": "MEDIUM"
+        },
+        {
+          "pattern": "6_0_68",
+          "frequency": 9,
+          "percentage": 2.158273381294964,
+          "keywords": [
+            [
+              "Speed",
+              9
+            ],
+            [
+              "Controller",
+              9
+            ],
+            [
+              "Leak",
+              7
+            ],
+            [
+              "(PFA)",
+              5
+            ],
+            [
+              "(Body)",
+              1
+            ]
+          ],
+          "risk_level": "MEDIUM"
+        },
+        {
+          "pattern": "7_0_8",
+          "frequency": 9,
+          "percentage": 2.158273381294964,
+          "keywords": [
+            [
+              "Nut",
+              8
+            ],
+            [
+              "UNION",
+              7
+            ],
+            [
+              "Fitting",
+              7
+            ],
+            [
+              "BULKHEAD",
+              6
+            ],
+            [
+              "BULK",
+              3
+            ]
+          ],
+          "risk_level": "MEDIUM"
+        },
+        {
+          "pattern": "7_0_17",
+          "frequency": 8,
+          "percentage": 1.9184652278177456,
+          "keywords": [
+            [
+              "체결불량",
+              7
+            ],
+            [
+              "CLAMP(NW50)",
+              3
+            ],
+            [
+              "CLAMP(NW40)",
+              2
+            ],
+            [
+              "Exhaust",
+              2
+            ],
+            [
+              "Clamp(125A)",
+              2
+            ]
+          ],
+          "risk_level": "LOW"
+        },
+        {
+          "pattern": "2_0_43",
+          "frequency": 8,
+          "percentage": 1.9184652278177456,
+          "keywords": [
+            [
+              "BCW",
+              4
+            ],
+            [
+              "Nut",
+              4
+            ],
+            [
+              "MALE",
+              4
+            ],
+            [
+              "ELBOW",
+              4
+            ],
+            [
+              "JACO",
+              3
+            ]
+          ],
+          "risk_level": "LOW"
+        },
+        {
+          "pattern": "7_2_43",
+          "frequency": 8,
+          "percentage": 1.9184652278177456,
+          "keywords": [
+            [
+              "MALE",
+              8
+            ],
+            [
+              "ELBOW",
+              8
+            ],
+            [
+              "Fitting",
+              8
+            ],
+            [
+              "nut",
+              8
+            ],
+            [
+              "Water",
+              8
+            ]
+          ],
+          "risk_level": "LOW"
+        },
+        {
+          "pattern": "2_0_49",
+          "frequency": 8,
+          "percentage": 1.9184652278177456,
+          "keywords": [
+            [
+              "O-Ring",
+              8
+            ],
+            [
+              "변형",
+              4
+            ],
+            [
+              "씹힘",
+              2
+            ],
+            [
+              "조립",
+              2
+            ],
+            [
+              "불량",
+              2
+            ]
+          ],
+          "risk_level": "LOW"
+        }
+      ],
+      "total_patterns": 184,
+      "concentration_index": 0.02220381967807049
+    },
+    "correlations": {
+      "product_part": 0.32060305730268207,
+      "stage_part": 0.723922721954416
+    },
+    "risk_analysis": {
+      "risk_levels": [
+        {
+          "part": "REDUCER DOUBLE Y UNION",
+          "defect_rate": 100.0,
+          "risk_level": "CRITICAL"
+        },
+        {
+          "part": "REDUCER DOUBLE Y UNION",
+          "defect_rate": 98.0,
+          "risk_level": "CRITICAL"
+        },
+        {
+          "part": "MALE CONNECTOR",
+          "defect_rate": 9.0,
+          "risk_level": "HIGH"
+        },
+        {
+          "part": "BULKHEAD UNION",
+          "defect_rate": 8.0,
+          "risk_level": "HIGH"
+        },
+        {
+          "part": "MALE ELBOW",
+          "defect_rate": 4.0,
+          "risk_level": "MEDIUM"
+        }
+      ],
+      "distribution": {
+        "CRITICAL": 2,
+        "HIGH": 2,
+        "MEDIUM": 1
+      },
+      "critical_parts": [
+        "REDUCER DOUBLE Y UNION",
+        "REDUCER DOUBLE Y UNION"
+      ]
+    },
+    "trend_analysis": {}
+  },
+  "improvement_suggestions": [
+    {
+      "target": "GAIA-II DUAL - REDUCER DOUBLE Y UNION",
+      "defect_rate": 100.0,
+      "urgency": "IMMEDIATE",
+      "root_causes": [
+        "체결 불량",
+        "누설",
+        "가공 정밀도"
+      ],
+      "specific_actions": [
+        "체결 토크 표준화",
+        "실링 재료 및 방법 개선"
+      ],
+      "inspection_points": [
+        "체결 토크",
+        "누설 여부",
+        "치수 정밀도"
+      ],
+      "expected_improvement": "불량률 50.0%p 감소 예상",
+      "implementation_cost": "HIGH",
+      "timeline": "1주 이내"
+    },
+    {
+      "target": "GAIA-P - REDUCER DOUBLE Y UNION",
+      "defect_rate": 98.0,
+      "urgency": "IMMEDIATE",
+      "root_causes": [
+        "체결 불량",
+        "누설",
+        "가공 정밀도"
+      ],
+      "specific_actions": [
+        "체결 토크 표준화",
+        "실링 재료 및 방법 개선"
+      ],
+      "inspection_points": [
+        "체결 토크",
+        "누설 여부",
+        "치수 정밀도"
+      ],
+      "expected_improvement": "불량률 50.0%p 감소 예상",
+      "implementation_cost": "HIGH",
+      "timeline": "1주 이내"
+    },
+    {
+      "target": "GAIA-P DUAL - MALE CONNECTOR",
+      "defect_rate": 9.0,
+      "urgency": "URGENT",
+      "root_causes": [
+        "N2 가압 불량",
+        "Tube 삽입 불량",
+        "Teflon 작업 불량",
+        "Fitting 체결 불량"
+      ],
+      "specific_actions": [
+        "N2 가압 압력 및 시간 표준화",
+        "Tube 삽입 깊이 및 각도 검사 강화",
+        "Teflon 테이프 감기 작업 표준화"
+      ],
+      "inspection_points": [
+        "N2 가압 누설",
+        "Tube 삽입 상태",
+        "Teflon 작업 품질"
+      ],
+      "expected_improvement": "불량률 4.5%p 감소 예상",
+      "implementation_cost": "MEDIUM",
+      "timeline": "2-4주"
+    }
+  ],
+  "selection_criteria": {
+    "ranking_method": "예측 불량률 기준 내림차순",
+    "primary_factors": [
+      {
+        "factor": "예측 불량률",
+        "weight": "40%",
+        "description": "ML 모델이 예측한 부품별 불량 발생 확률",
+        "current_range": "100.0% ~ 4.0%"
+      },
+      {
+        "factor": "생산량 가중치",
+        "weight": "30%",
+        "description": "실제 월간 생산량에 따른 중요도 반영",
+        "current_focus": "GAIA-I DUAL(34.7%), GAIA-I(32.4%)"
+      },
+      {
+        "factor": "과거 불량 빈도",
+        "weight": "20%",
+        "description": "해당 부품의 역사적 불량 발생 건수",
+        "data_period": "최근 12개월 데이터 기준"
+      },
+      {
+        "factor": "키워드 유사도",
+        "weight": "10%",
+        "description": "TF-IDF 기반 불량 내용 유사성 분석",
+        "method": "MeCab 형태소 분석 + 한국어 불용어 제거"
+      }
+    ],
+    "special_cases": {
+      "미분류": {
+        "current_status": "0%",
+        "impact": "전체 불량의 26.7% 차지",
+        "priority": "HIGH - 품질 관리 체계 근본적 개선 필요",
+        "main_issue": "조립도면/BOM 정보 불일치가 주원인"
+      }
+    },
+    "selection_logic": [
+      "1. 학습된 데이터에서 생산량 가중치 적용하여 샘플링",
+      "2. ML 모델로 각 샘플의 불량 확률 예측",
+      "3. 예측 확률 기준 내림차순 정렬",
+      "4. 상위 5개 부품 선정",
+      "5. 각 부품별 맞춤형 개선 제안 매칭"
+    ]
+  },
+  "analysis_summary": null,
+  "generated_at": "2025-07-29 11:06:07",
+  "analysis_version": "2.1"
+}

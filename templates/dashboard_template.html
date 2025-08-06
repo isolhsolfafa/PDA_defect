@@ -1,0 +1,430 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>모델별 불량예상 대시보드</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #f8f9fa;
+      margin: 0; 
+      padding: 0;
+      color: #333;
+      height: 330px;
+      overflow: hidden;
+    }
+    
+    .container {
+      width: 100%;
+      height: 330px;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-width: 350px;
+      min-height: 330px;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .cards {
+      border: none;
+      border-radius: 8px;
+      padding: 1px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      margin: 0;
+    }
+    
+    .card {
+      display: none;
+      padding: 6px;
+      border-radius: 6px;
+      background: linear-gradient(145deg, #ffffff, #f8f9fa);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      animation: slideIn 0.6s ease-out;
+      font-size: 15px;
+      line-height: 1.4;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      border-left: 3px solid #667eea;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      margin: 0;
+      overflow: hidden;
+    }
+    
+    .card h3 {
+      margin: 0 0 2px 0;
+      color: #2c3e50;
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .risk-level {
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .risk-high { background: #fee; color: #d63384; }
+    .risk-medium { background: #fff3cd; color: #f57c00; }
+    .risk-low { background: #d1e7dd; color: #198754; }
+    
+    .priority-badge {
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+    
+    .priority-immediate { background: #ffebee; color: #c62828; border: 1px solid #ef5350; }
+    .priority-urgent { background: #fff8e1; color: #f57c00; border: 1px solid #ffb74d; }
+    .priority-high { background: #fff3e0; color: #ef6c00; border: 1px solid #ff9800; }
+    .priority-medium { background: #e3f2fd; color: #1976d2; border: 1px solid #42a5f5; }
+    .priority-low { background: #f3e5f5; color: #7b1fa2; border: 1px solid #ab47bc; }
+    .priority-normal { background: #f5f5f5; color: #616161; border: 1px solid #9e9e9e; }
+    
+    .info-item {
+      display: flex;
+      align-items: center;
+      margin: 3px 0;
+      padding: 2px 0;
+    }
+    
+    .info-icon {
+      font-size: 16px;
+      margin-right: 6px;
+      width: 18px;
+    }
+    
+    .info-label {
+      font-weight: 500;
+      color: #495057;
+      margin-right: 8px;
+    }
+    
+    .info-value {
+      color: #2c3e50;
+      font-weight: 600;
+    }
+    
+    .progress-container {
+      width: 100%;
+      margin: 3px 0;
+      background: #f8f9fa;
+      padding: 1px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #e9ecef;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #ced4da;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(45deg, #28a745 25%, #20c997 25%, #20c997 50%, #28a745 50%, #28a745 75%, #20c997 75%);
+      background-size: 8px 8px;
+      animation: progress-animation 2s linear infinite;
+      transition: width 1s ease-in-out;
+      border-radius: 1px;
+    }
+    
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 9px;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+      z-index: 10;
+    }
+    
+    @keyframes progress-animation {
+      0% { background-position: 0 0; }
+      100% { background-position: 8px 0; }
+    }
+    
+    .suggestion-box {
+      background: #f8f9fa;
+      border-radius: 4px;
+      padding: 5px;
+      margin-top: 3px;
+      margin-bottom: 0px;
+      border-left: 2px solid #28a745;
+      font-size: 12px;
+      line-height: 1.3;
+      flex: 1;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    @keyframes slideIn {
+      from { 
+        opacity: 0; 
+        transform: translateX(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    
+    .card:hover {
+      animation: pulse 2s infinite;
+    }
+    
+    .error {
+      color: #dc3545;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .indicator {
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+      display: flex;
+      gap: 4px;
+    }
+    
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #dee2e6;
+      transition: background 0.3s ease;
+    }
+    
+    .dot.active {
+      background: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="cards" id="cards">
+      <div class="indicator" id="indicator"></div>
+    </div>
+  </div>
+
+  <script>
+    fetch('/data.json')
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to load data.json: ' + response.status);
+        return response.json();
+      })
+      .then(data => renderCards(data))
+      .catch(error => {
+        console.error('Error loading data:', error);
+        const cardsContainer = document.getElementById('cards');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = '데이터를 로드할 수 없습니다.';
+        cardsContainer.appendChild(errorDiv);
+      });
+
+    function getRiskLevel(percentage) {
+      if (percentage >= 15) return 'risk-high';
+      if (percentage >= 5) return 'risk-medium';
+      return 'risk-low';
+    }
+
+    function getRiskText(percentage) {
+      if (percentage >= 15) return '높음';
+      if (percentage >= 5) return '보통';
+      return '낮음';
+    }
+
+    function getPriorityText(priority) {
+      const priorityMap = {
+        'IMMEDIATE': '🔴 즉시조치',
+        'URGENT': '🟡 긴급처리', 
+        'HIGH': '🟠 높음',
+        'MEDIUM': '🔵 보통',
+        'LOW': '⚪ 낮음',
+        'NORMAL': '⚪ 일반'
+      };
+      return priorityMap[priority] || '⚪ 일반';
+    }
+
+    function getPriorityClass(priority) {
+      const classMap = {
+        'IMMEDIATE': 'priority-immediate',
+        'URGENT': 'priority-urgent',
+        'HIGH': 'priority-high', 
+        'MEDIUM': 'priority-medium',
+        'LOW': 'priority-low',
+        'NORMAL': 'priority-normal'
+      };
+      return classMap[priority] || 'priority-normal';
+    }
+
+    function renderCards(data) {
+      const cardsContainer = document.getElementById('cards');
+      const indicator = document.getElementById('indicator');
+      
+      // 기존 내용 제거
+      const existingCards = cardsContainer.querySelectorAll('.card');
+      existingCards.forEach(card => card.remove());
+      
+      if (!data.predictions || data.predictions.length === 0) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = '표시할 데이터가 없습니다.';
+        cardsContainer.appendChild(errorDiv);
+        return;
+      }
+      
+      // 데이터 구조 확인 및 디버깅
+      console.log('Data structure:', data.predictions[0]);
+      console.log('Available keys:', Object.keys(data.predictions[0]));
+
+      // 카드 생성
+      data.predictions.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.display = index === 0 ? 'flex' : 'none';
+        
+        // 안전한 데이터 접근
+        const defectRate = item.예상불량률 || 0;
+        const defectType = item.불량유형 || item.defect_type || '미분류';
+        const partName = item.부품 || item.part || '미지정';
+        const accumulatedCount = item.누적 || item.accumulated || 0;
+        const keywords = item.키워드 || item.keywords || '없음';
+        const suggestion = item.제안 || item.suggestion || '검토 필요';
+        const evidence = item.근거 || item.evidence || '';
+        const expectedEffect = item.예상효과 || item.expected_effect || '';
+        const priority = item.우선순위 || item.priority || 'NORMAL';
+        
+        const riskLevel = getRiskLevel(defectRate);
+        const riskText = getRiskText(defectRate);
+        const priorityText = getPriorityText(priority);
+        const priorityClass = getPriorityClass(priority);
+        
+        card.innerHTML = `
+          <h3>
+            ${item.모델 || item.model || '모델명 없음'}
+            <span class="risk-level ${riskLevel}">${riskText} ${defectRate.toFixed(1)}%</span>
+          </h3>
+          
+          <div class="info-item">
+            <span class="info-icon">⚡</span>
+            <span class="info-label">우선순위:</span>
+            <span class="priority-badge ${priorityClass}">${priorityText}</span>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">🛠</span>
+            <span class="info-label">불량유형:</span>
+            <span class="info-value">${defectType}</span>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">🔧</span>
+            <span class="info-label">주요부품:</span>
+            <span class="info-value">${partName}</span>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">📊</span>
+            <span class="info-label">예상 불량률:</span>
+            <span class="info-value">${defectRate.toFixed(1)}%</span>
+          </div>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${Math.min(defectRate, 100)}%"></div>
+              <div class="progress-text">${defectRate.toFixed(1)}%</div>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">📈</span>
+            <span class="info-label">누적 건수:</span>
+            <span class="info-value">${accumulatedCount}건</span>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">🔍</span>
+            <span class="info-label">키워드:</span>
+            <span class="info-value">${keywords}</span>
+          </div>
+          
+          <div class="suggestion-box">
+            <div>
+              <div style="font-weight: 500; margin-bottom: 2px; font-size: 12px; line-height: 1.1;">💡 Pin Point 제안</div>
+              <div style="font-size: 11px; color: #495057; line-height: 1.2; margin-bottom: 2px;">${suggestion}</div>
+              ${evidence ? `<div style="font-size: 10px; color: #6c757d; line-height: 1.2; margin-bottom: 2px;">${evidence}</div>` : ''}
+              ${expectedEffect ? `<div style="font-size: 10px; color: #28a745; font-weight: 500; line-height: 1.2; margin-bottom: 2px;">${expectedEffect}</div>` : ''}
+            </div>
+            <div style="margin-top: auto; padding-top: 4px; border-top: 1px solid #dee2e6;">
+              <div style="font-size: 8px; color: #6c757d; text-align: center;">
+                <span style="background: #e9ecef; padding: 1px 4px; border-radius: 3px;">실시간 모니터링</span>
+                <span style="margin-left: 8px; background: #e3f2fd; padding: 1px 4px; border-radius: 3px;">ML 분석</span>
+              </div>
+            </div>
+          </div>
+        `;
+        cardsContainer.appendChild(card);
+      });
+
+      // 인디케이터 생성
+      indicator.innerHTML = '';
+      data.predictions.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `dot ${index === 0 ? 'active' : ''}`;
+        indicator.appendChild(dot);
+      });
+
+      // 자동 슬라이드
+      let cards = document.querySelectorAll('.card');
+      let dots = document.querySelectorAll('.dot');
+      let currentIndex = 0;
+      
+      function showNextCard() {
+        // 현재 카드 숨기기
+        cards[currentIndex].style.display = 'none';
+        dots[currentIndex].classList.remove('active');
+        
+        // 다음 카드 보여주기
+        currentIndex = (currentIndex + 1) % cards.length;
+        cards[currentIndex].style.display = 'flex';
+        dots[currentIndex].classList.add('active');
+      }
+      
+      setInterval(showNextCard, 6000); // 6초마다 전환
+    }
+  </script>
+</body>
+</html> 
