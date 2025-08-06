@@ -32,8 +32,8 @@ def run_main_system(mode=None):
         # 환경변수 설정
         set_environment_variables()
 
-        # 실행 명령어 구성
-        script_path = "/Users/kdkyu311/Desktop/GST/PDA_ML/main.py"
+        # 실행 명령어 구성 (상대 경로 사용)
+        script_path = "main.py"
         cmd = [sys.executable, script_path]
 
         if mode == "retrain":

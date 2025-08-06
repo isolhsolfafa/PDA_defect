@@ -16,7 +16,12 @@ GH_TOKEN_1=your_github_token_1_here
 GH_TOKEN_2=your_github_token_2_here
 ```
 
-## 📊 총 설정해야 할 Secrets: 6개
+### Google Sheets API 관련 (1개)
+```
+GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"...entire JSON content..."}
+```
+
+## 📊 총 설정해야 할 Secrets: 7개
 
 1. **TEAMS_TENANT_ID** - Microsoft Teams 테넌트 ID
 2. **TEAMS_CLIENT_ID** - Teams API 클라이언트 ID  
@@ -24,8 +29,11 @@ GH_TOKEN_2=your_github_token_2_here
 4. **TEAMS_TEAM_ID** - Teams 팀 ID
 5. **GH_TOKEN_1** - GitHub 토큰 1 (gst-factory-display 레포용)
 6. **GH_TOKEN_2** - GitHub 토큰 2 (gst-factory 레포용)
+7. **GOOGLE_SERVICE_ACCOUNT_JSON** - Google Sheets API 인증 JSON (main.py용)
 
-💡 **참고**: Google Sheets API는 생산량 가중치 계산용으로만 사용되며, 주요 불량 데이터는 Teams에서 가져옵니다.
+💡 **참고**: 
+- Google Sheets API는 생산량 가중치 계산용으로 사용됩니다.
+- GOOGLE_SERVICE_ACCOUNT_JSON은 JSON 파일 전체 내용을 문자열로 저장해야 합니다.
 
 ## 🔑 개발자 참고사항
 

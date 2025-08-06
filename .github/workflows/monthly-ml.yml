@@ -5,6 +5,22 @@ on:
     # 매월 1일 오전 8시 (UTC 23:00 = KST 08:00)
     - cron: '0 23 1 * *'
   
+  push:
+    branches: [ main ]
+    paths:
+      - 'main.py'
+      - 'ml/**'
+      - 'run_main.py'
+      - 'config.py'
+      
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'main.py'
+      - 'ml/**'
+      - 'run_main.py'
+      - 'config.py'
+  
   # 수동 실행 가능
   workflow_dispatch:
 
@@ -26,6 +42,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
+    - name: Create Google Sheets credentials
+      run: |
+        mkdir -p credentials
+        echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > credentials/gst-manegemnet-70faf8ce1bff.json
+        
     - name: Set up environment variables
       env:
         TEAMS_TENANT_ID: ${{ secrets.TEAMS_TENANT_ID }}
@@ -45,7 +66,7 @@ jobs:
     - name: Run ML model retrain
       run: |
         echo "🤖 Starting monthly ML model retrain..."
-        python run_main.py --mode retrain
+        python main.py --mode retrain
         
     - name: Upload model artifacts
       uses: actions/upload-artifact@v4

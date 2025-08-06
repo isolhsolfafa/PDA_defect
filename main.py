@@ -14,6 +14,18 @@ import os
 import json
 from typing import Optional
 
+# .env 파일 로드 (로컬 개발용)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # .env 파일의 환경변수를 자동으로 로드
+    print("✅ .env 파일에서 환경변수 로드 완료")
+except ImportError:
+    # dotenv가 없으면 패스 (GitHub Actions에서는 불필요)
+    pass
+except FileNotFoundError:
+    # .env 파일이 없으면 패스 (GitHub Actions에서는 정상)
+    pass
+
 # 모듈 임포트
 from config import TEST_MODE
 from utils.logger import setup_logger, flush_log
