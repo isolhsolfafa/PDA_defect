@@ -43,7 +43,7 @@ class GoogleSheetsConfig:
         "credentials/gst-manegemnet-70faf8ce1bff.json"  # 상대경로로 변경
     )
     spreadsheet_id: str = "19dkwKNW6VshCg3wTemzmbbQlbATfq6brAWluaps1Rm0"
-    sheet_name: str = "7월생산물량"
+    sheet_name: str = "월생산물량"
     fallback_sheet_name: str = "월생산물량"
     scopes: List[str] = None
 
