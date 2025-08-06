@@ -2,28 +2,36 @@
 
 Microsoft Teams 연동 및 머신러닝을 활용한 공장 불량 예측 및 분석 시스템입니다.
 
-## 🚀 **2025년 7월 베타 서비스 준비**
+## 🚀 **최신 개발 현황 (2025년 1월)**
 
-### 📋 **베타 테스트 계획**
-- **기간**: 2025년 7월 1일 - 7월 31일
-- **목표**: 프로덕션 환경에서 데이터 정합성 검증 및 시스템 안정성 확보
-- **범위**: 7월 생산물량 데이터 기반 실시간 불량 예측 서비스
+### 📋 **시스템 전환 완료**
+- **실행 파일 변경**: `factory_ML.py` → `main.py`로 통합
+- **데이터 소스 현대화**: 정적 CSV → Teams 동적 엑셀 전환
+- **CI/CD 자동화**: GitHub Actions 파이프라인 구축 완료
+- **보안 강화**: 하드코딩된 인증 정보 → 환경변수 방식 전환
 
-### 🔍 **데이터 정합성 검증 (Data Integrity Validation)**
-```bash
-# 데이터 정합성 검증 스크립트 실행
-python -m scripts.data_validatio
+### 🔄 **CI/CD 파이프라인 구축 완료**
+```yaml
+# 일간 대시보드 자동 업데이트
+daily-dashboard.yml:
+  - 트리거: 평일 오후 5시 (KST)
+  - 실행: run_refactored_dashboard.py
+  - 상태: ✅ 정상 작동 중
 
-# 7월 생산물량 vs 실제 불량 데이터 매칭 검증
-python -m scripts.production_validation
+# 월간 ML 모델 재학습
+monthly-ml.yml:
+  - 트리거: 매월 1일 오전 8시 (KST)
+  - 실행: main.py
+  - 상태: ✅ 설정 완료
 ```
 
-### 🎯 **베타 서비스 주요 개선사항**
-- ✅ **7월 생산물량 데이터 마이그레이션**: 96대 → 156대 (+62.5%)
-- ✅ **모델 다양성 확대**: 5개 → 10개 모델 (GAIA-II, DRAGON 계열 추가)
-- ✅ **동적 분기별 차트**: 7월 데이터 자동 3분기 분류
-- ✅ **실시간 대시보드**: 외주사별/조치유형별 통합 분석
-- ✅ **가중치 최적화**: 새로운 생산량 비율 자동 반영
+### 🎯 **최근 주요 개선사항**
+- ✅ **Teams API 다중 워크시트 지원**: "가압 불량내역" + "제조품질 불량내역" 통합 분석
+- ✅ **향상된 호버 정보**: 차트 hover에 "주요 조치내용" + "주요 불량위치" (상위 3개) 추가
+- ✅ **UI 개선**: 인터렉티브 메뉴 버튼 위치 조정으로 차트 겹침 해결
+- ✅ **보안 강화**: GitHub Push Protection 대응, 모든 하드코딩 제거
+- ✅ **모듈화 완성**: 리팩토링된 분석 모듈 안정화
+- ✅ **자동화 완성**: 수동 배포 → GitHub Actions 자동 배포
 
 ## 🎯 주요 기능
 
@@ -104,11 +112,12 @@ jobs:
 
 ```
 PDA_ML/
-├── config.py                    # 전체 시스템 설정
-├── main.py                      # 📊 Teams API 기반 ML 시스템
-├── run_main.py                  # 🚀 신규 실행 스크립트 (Teams API)
-├── factory_ML.py                # 🏭 기존 ML 실행 파일 (Google Sheets)
-├── run_refactored_dashboard.py  # 일간 실행 (리팩토링 버전)
+├── config.py                    # 전체 시스템 설정 (환경변수 통합)
+├── main.py                      # 📊 메인 ML 시스템 (Teams API + ML 통합)
+├── run_main.py                  # 🚀 main.py 실행 스크립트 (환경변수 설정)
+├── run_refactored_dashboard.py  # 📈 일간 대시보드 실행 (CI/CD 연동)
+├── local_only/
+│   └── factory_ML.py            # 🏭 레거시 ML (로컬 전용, Git 제외)
 ├── requirements.txt             # 패키지 의존성
 ├── README.md                   # 프로젝트 설명서
 ├── 
@@ -174,49 +183,55 @@ python -m analysis.defect_visualizer
 - GitHub 자동 업로드
 - 빠른 실시간 모니터링
 
-### 🏭 **기존 ML 실행 (factory_ML.py)**
+### 📊 **메인 ML 시스템 (main.py)**
 ```bash
-# 기존 방식 - Google Sheets 기반 ML 실행
-python factory_ML.py
+# 현재 메인 시스템 - Teams API 통합 ML 실행
+python run_main.py
 ```
 **목적:**
-- RandomForest + TF-IDF 기반 불량 예측
-- Google Sheets 연동 생산량 가중치 적용 (기존 방식)
-- Pie Chart 기반 대시보드 생성
-- GitHub Pages 자동 배포 (2개 저장소)
+- Teams API 기반 실시간 불량 데이터 분석
+- 다중 워크시트 통합 분석 ("가압 불량내역" + "제조품질 불량내역")
+- Google Sheets 기반 생산량 가중치 적용
+- GitHub Pages 자동 배포
 
 **주요 기능:**
-- **ML 엔진**: RandomForest 분류기 + 한국어 형태소 분석
-- **데이터 소스**: 정적 데이터 기반
-  - **불량 분석**: 로컬 CSV 파일 (`data/통합본.csv`) - 수동 정리된 정적 데이터
-  - **생산 가중치**: Google Sheets `"6월생산물량"` 시트 (백업: `"월생산물량"`)
-- **시각화**: 모델별 불량률 Pie Chart + 회전 카드 UI
-- **배포**: `gst-factory-display` + `gst-factory` 저장소 업로드
+- **ML 엔진**: RandomForest 분류기 + TF-IDF + MeCab 한국어 분석
+- **데이터 소스**: 동적 데이터 기반
+  - **불량 분석**: Teams Excel 다중 워크시트 (실시간 동적 데이터)
+  - **생산 가중치**: Google Sheets `"7월생산물량"` 시트 (백업: `"월생산물량"`)
+- **시각화**: 통합 대시보드 + Pie Chart + 회전 카드 UI
+- **배포**: GitHub Actions를 통한 자동 배포
 
-### 🚀 **신규 ML 실행 (run_main.py → main.py)**
+### 🏭 **레거시 ML (local_only/factory_ML.py)**
 ```bash
-# 신규 방식 - Teams API 연동 실행
+# 로컬 전용 - Google Sheets 기반 ML 실행 (Git 제외)
+python local_only/factory_ML.py
+```
+**목적:**
+- 기존 방식 호환성 유지 (로컬 개발/테스트용)
+- 정적 CSV 파일 기반 분석
+- 수동 배포 방식
+
+### 🔄 **현재 시스템 실행 흐름**
+```bash
+# 1. 환경변수 설정 및 main.py 실행
 python run_main.py
 
-# 모델 재학습
+# 2. 모델 재학습 (월간)
 python run_main.py --mode retrain
 
-# 데이터 추가
+# 3. 데이터 추가
 python run_main.py --mode add_data
 ```
-**목적:**
-- Teams API를 통한 실시간 불량 데이터 분석
-- Google Sheets를 통한 생산모델 비율/가중치 계산
-- 환경변수 자동 설정 후 main.py 실행
-- 향상된 데이터 정합성 및 신뢰성
+**실행 흐름:**
+1. `run_main.py`: 환경변수 설정 및 Teams API 인증 준비
+2. `main.py`: 실제 ML 분석 및 대시보드 생성 실행
+3. GitHub Actions: 자동 배포 및 모니터링
 
-**주요 기능:**
-- **데이터 소스**: 동적 데이터 기반 (실시간 업데이트)
-  - **분석용 불량 데이터**: Teams 엑셀 `"가압 불량내역"` 워크시트 (동적 관리)
-  - **시각화용 생산 가중치**: Google Sheets `"7월생산물량"` 시트 (백업: `"월생산물량"`)
-- **실행 스크립트**: `run_main.py`가 환경변수 설정 후 `main.py` 호출
-- **모드 지원**: 기본 예측 / 모델 재학습 / 데이터 추가
-- **완전성**: `TeamsIntegratedDataLoader` 통합 데이터 로더 사용
+**통합 데이터 소스:**
+- **불량 분석**: Teams Excel `"가압 불량내역"` + `"제조품질 불량내역"` (실시간)
+- **생산 가중치**: Google Sheets `"7월생산물량"` 시트
+- **배포**: `gst-factory` + `gst-factory-display` 저장소 자동 업로드
 
 ### 🔄 **리팩토링 대시보드 실행 (run_refactored_dashboard.py)**
 ```bash
@@ -298,33 +313,32 @@ GITHUB_TOKEN_2=your_github_token_here
 
 ## 📖 사용법
 
-### 🎯 **정기 운영 (추천)**
+### 🎯 **정기 운영 (현재 권장 방식)**
 
-#### 🚀 신규 ML 실행 (Teams API 기반)
+#### 📊 **메인 ML 시스템 실행**
 ```bash
-# Teams API 연동 ML 시스템 실행
+# 현재 메인 시스템 - Teams API 기반 ML 분석
 python run_main.py
 ```
 
-#### 🏭 기존 ML 실행 (Google Sheets 기반)
+#### 📈 **일간 대시보드 업데이트 (자동화)**
 ```bash
-# 기존 방식 - Google Sheets 기반 ML 실행
-python factory_ML.py
+# GitHub Actions 자동 실행 (평일 오후 5시)
+# 수동 실행시:
+python run_refactored_dashboard.py
 ```
 
-#### 월간 실행 (모델 학습)
+#### 🔄 **월간 모델 재학습 (자동화)**
 ```bash
-# 매월 1일 실행 (생산량 변경 시) - Teams API 방식
+# GitHub Actions 자동 실행 (매월 1일 오전 8시)
+# 수동 실행시:
 python run_main.py --mode retrain
 ```
 
-#### 일간 실행 (대시보드 업데이트)
+#### 🏭 **레거시 시스템 (로컬 전용)**
 ```bash
-# 매일 오전 9시 실행 (cron job 설정) - 리팩토링 버전
-python run_refactored_dashboard.py
-
-# 또는 기존 버전
-python -m analysis.defect_visualizer
+# 로컬 개발/테스트용 (Git 제외)
+python local_only/factory_ML.py
 ```
 
 ### 🔧 **개발/테스트 모드**
@@ -370,10 +384,11 @@ Teams에서 로드되는 데이터는 다음 컬럼을 포함해야 합니다:
 
 ### 🤖 **ML 엔진**
 - **`DefectPredictor`**: RandomForest + TF-IDF 기반 예측 (ml/defect_predictor.py)
-- **`main.py`**: Teams API 기반 ML 시스템 (336줄)
-- **`factory_ML.py`**: 기존 Google Sheets 기반 ML (527줄) - Pie Chart 생성
+- **`main.py`**: Teams API 기반 통합 ML 시스템 (398줄) - 현재 메인
+- **`local_only/factory_ML.py`**: 레거시 Google Sheets 기반 ML (Git 제외)
 - **동적 random_state**: 매번 다른 인사이트 발견
-- **생산량 가중치**: Teams API + Google Sheets 실제 생산량 반영
+- **다중 워크시트**: Teams Excel "가압 불량내역" + "제조품질 불량내역" 통합
+- **생산량 가중치**: Google Sheets 실제 생산량 반영
 - **한국어 처리**: MeCab 형태소 분석기 + TF-IDF
 
 ### 📈 **분석 엔진**
@@ -424,6 +439,13 @@ Teams에서 로드되는 데이터는 다음 컬럼을 포함해야 합니다:
 - **기존**: 정적 CSV 파일 (수동 정리) → **신규**: Teams 동적 엑셀 (실시간 관리)
 - **데이터 품질**: 수동 업데이트 → 실시간 자동 동기화
 - **운영 효율성**: 파일 업로드 불필요, Teams에서 직접 관리
+- **다중 워크시트**: "가압 불량내역" + "제조품질 불량내역" 통합 분석
+
+### 🔧 **시스템 아키텍처 변화**
+- **실행 파일**: `factory_ML.py` → `main.py` 통합
+- **CI/CD**: 수동 배포 → GitHub Actions 자동화
+- **보안**: 하드코딩 → 환경변수 + GitHub Secrets
+- **모니터링**: 로컬 실행 → 클라우드 기반 자동 모니터링
 
 ## 🌐 접속 URL
 
@@ -436,18 +458,29 @@ Teams에서 로드되는 데이터는 다음 컬럼을 포함해야 합니다:
 - **모델 저장**: `models/defect_predictor.pkl`
 - **캐시 데이터**: `cache/monthly_production.json`
 
-## 🔄 자동화 설정 (Cron Job)
+## 🔄 자동화 설정
 
+### 🚀 **GitHub Actions CI/CD (현재 적용)**
+```yaml
+# .github/workflows/daily-dashboard.yml
+# 평일 오후 5시 (KST) 자동 실행
+schedule:
+  - cron: '0 8 * * 1-5'  # UTC 08:00 = KST 17:00
+
+# .github/workflows/monthly-ml.yml  
+# 매월 1일 오전 8시 (KST) 자동 실행
+schedule:
+  - cron: '0 23 * * *'  # UTC 23:00 = KST 08:00 (다음날)
+```
+
+### 🔧 **로컬 Cron Job (백업 옵션)**
 ```bash
 # crontab -e
-# 매일 오전 9시 대시보드 업데이트 (리팩토링 버전)
-0 9 * * * cd /path/to/PDA_ML && python run_refactored_dashboard.py
+# 매일 오후 5시 대시보드 업데이트
+0 17 * * * cd /path/to/PDA_ML && python run_refactored_dashboard.py
 
-# 매월 1일 오전 8시 모델 재학습
-0 8 1 * * cd /path/to/PDA_ML && python main.py
-
-# 백업: 기존 버전 대시보드 업데이트 (필요시)
-# 0 9 * * * cd /path/to/PDA_ML && python -m analysis.defect_visualizer
+# 매월 1일 오전 8시 모델 재학습  
+0 8 1 * * cd /path/to/PDA_ML && python run_main.py --mode retrain
 ```
 
 ## 🛠️ 트러블슈팅
@@ -473,6 +506,27 @@ Teams에서 로드되는 데이터는 다음 컬럼을 포함해야 합니다:
 
 ---
 
-**최종 업데이트**: 2025년 7월 12일  
-**버전**: v2.1 (7월 베타 서비스 준비)  
-**다음 마일스톤**: 프로덕션 배포 (2025년 8월 1일)
+## 📋 **개발 히스토리**
+
+### 🔄 **주요 마일스톤**
+- **v1.0 (2024년 Q4)**: 기본 ML 시스템 구축 (`factory_ML.py`)
+- **v2.0 (2025년 1월)**: Teams API 연동 및 시스템 통합 (`main.py`)
+- **v2.1 (현재)**: CI/CD 자동화 및 보안 강화
+
+### 📈 **최근 변경사항 (2025년 1월)**
+- ✅ **실행 파일 통합**: `factory_ML.py` → `main.py`로 메인 시스템 변경
+- ✅ **데이터 소스 현대화**: 정적 CSV → Teams 동적 Excel 전환
+- ✅ **CI/CD 파이프라인**: GitHub Actions 기반 자동 배포 구축
+- ✅ **보안 강화**: 모든 하드코딩 제거, 환경변수 + GitHub Secrets 적용
+- ✅ **다중 워크시트 지원**: "가압 불량내역" + "제조품질 불량내역" 통합
+- ✅ **UI/UX 개선**: 차트 hover 정보 향상, 메뉴 겹침 해결
+- ✅ **모듈화 완성**: 리팩토링 분석 모듈 안정화
+
+### 🚧 **진행 중인 작업**
+- 🔄 **레거시 시스템 정리**: `local_only/factory_ML.py` 환경변수 리팩토링 (보류)
+
+---
+
+**최종 업데이트**: 2025년 1월 30일  
+**현재 버전**: v2.1 (CI/CD 자동화 완료)  
+**다음 목표**: 레거시 시스템 완전 정리 및 성능 최적화
