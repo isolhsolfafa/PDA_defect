@@ -46,6 +46,15 @@ jobs:
       run: |
         mkdir -p credentials
         echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > credentials/gst-manegemnet-70faf8ce1bff.json
+        # JSON 파일 검증
+        if [ -s credentials/gst-manegemnet-70faf8ce1bff.json ]; then
+          echo "✅ Google Sheets 인증 파일 생성 완료"
+          head -3 credentials/gst-manegemnet-70faf8ce1bff.json
+        else
+          echo "❌ Google Sheets 인증 파일이 비어있습니다"
+          ls -la credentials/
+          exit 1
+        fi
         
     - name: Set up environment variables
       env:
