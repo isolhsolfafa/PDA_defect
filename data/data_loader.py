@@ -94,16 +94,30 @@ class DataLoader:
             raise
 
     def preprocess_text(self, text: str) -> List[str]:
-        """한국어 텍스트 전처리 (MeCab 형태소 분석)"""
+        """한국어 + 영어 텍스트 전처리 (MeCab 형태소 분석 + 영어 키워드 추출)"""
         try:
             if not isinstance(text, str):
                 return []
-            nouns = self.mecab.nouns(text)
-            return [
-                noun
-                for noun in nouns
+            
+            # 1. 영어 키워드 추출 (대소문자 구분 없이)
+            import re
+            english_words = re.findall(r'\b[A-Za-z][A-Za-z0-9\s]*\b', text)
+            english_words = [word.strip() for word in english_words if len(word.strip()) > 1]
+            
+            # 2. 한국어 명사 추출 (MeCab)
+            # 특수문자 제거 후 한국어 추출
+            clean_text = re.sub(r'[^\w\s가-힣]', ' ', text)
+            korean_nouns = self.mecab.nouns(clean_text)
+            korean_nouns = [
+                noun for noun in korean_nouns 
                 if noun not in self.korean_stop_words and len(noun) > 1
             ]
+            
+            # 3. 결합
+            all_keywords = english_words + korean_nouns
+            
+            return all_keywords
+            
         except Exception as e:
             logger.warning(f"텍스트 전처리 실패: {text[:20]}... - {e}")
             return []
