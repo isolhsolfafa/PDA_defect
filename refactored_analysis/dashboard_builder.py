@@ -180,12 +180,10 @@ class DashboardBuilder(BaseVisualizer):
             # HTML 템플릿
             html_template = self._get_html_template()
 
-            # 현재 연도 및 타임스탬프 추출 (한국 시간)
-            from datetime import datetime, timezone, timedelta
+            # 현재 연도 및 타임스탬프 추출
+            from datetime import datetime
 
-            # 한국 시간 (UTC+9) 설정
-            kst = timezone(timedelta(hours=9))
-            now = datetime.now(kst)
+            now = datetime.now()
             current_year = now.year
             timestamp = now.strftime("%Y년 %m월 %d일 %H:%M:%S")
 
@@ -469,6 +467,20 @@ class DashboardBuilder(BaseVisualizer):
                 return empty_fig, empty_fig
 
             # 1. 공통 부품별 전체 분포 TOP10 차트
+            # He미보증 데이터 필터링
+            if "비고" in pressure_df.columns:
+                pressure_df = pressure_df[
+                    ~pressure_df["비고"].str.contains(
+                        "제조\\(He미보증\\)", case=False, na=False
+                    )
+                ]
+            if "비고" in quality_df.columns:
+                quality_df = quality_df[
+                    ~quality_df["비고"].str.contains(
+                        "제조\\(He미보증\\)", case=False, na=False
+                    )
+                ]
+
             # 가압검사 데이터에 구분 컬럼 추가
             pressure_df["검사구분"] = "가압검사"
             quality_df["검사구분"] = "제조품질"
@@ -857,21 +869,137 @@ class DashboardBuilder(BaseVisualizer):
                         )
                     )
 
+            # 4. 부품별 검사공정 비교 차트 추가 (TOP5, 월별)
+            # TOP5 부품에 대해 각각 가압검사/제조품질 분리된 월별 추이
+            top5_for_comparison = list(top10_parts.index)[:5]  # TOP10에서 상위 5개 선택
+
+            if "발생월" in pressure_df.columns and "발생월" in quality_df.columns:
+                months = sorted(
+                    list(
+                        set(
+                            list(pressure_df["발생월"].dropna())
+                            + list(quality_df["발생월"].dropna())
+                        )
+                    )
+                )
+
+                # 월 이름을 한국어로 변환
+                month_names = []
+                for month in months:
+                    month_str = str(month)
+                    try:
+                        year_month = month_str.split("-")
+                        if len(year_month) == 2:
+                            year, month_num = year_month
+                            month_names.append(f"{year}년 {month_num}월")
+                        else:
+                            month_names.append(month_str)
+                    except:
+                        month_names.append(month_str)
+
+                # 부품별 색상 팔레트 (분기별 비교와 동일)
+                colors_comparison = [
+                    "#FF6B6B",
+                    "#4ECDC4",
+                    "#45B7D1",
+                    "#96CEB4",
+                    "#FFEAA7",
+                ]
+
+                # 각 TOP5 부품별로 가압검사/제조품질 분리된 라인차트 추가
+                for i, part in enumerate(top5_for_comparison):
+                    base_color = colors_comparison[i % len(colors_comparison)]
+
+                    # 옅은 색상 생성 (RGBA 형식으로 변환)
+                    # hex -> rgba 변환
+                    hex_color = base_color.lstrip("#")
+                    r = int(hex_color[0:2], 16)
+                    g = int(hex_color[2:4], 16)
+                    b = int(hex_color[4:6], 16)
+                    light_color = f"rgba({r},{g},{b},0.5)"  # 50% 투명도
+
+                    # 가압검사 월별 데이터
+                    pressure_monthly_part = (
+                        pressure_df[pressure_df["부품명"] == part]
+                        .groupby("발생월")
+                        .size()
+                        if "발생월" in pressure_df.columns
+                        else pd.Series()
+                    )
+
+                    # 제조품질 월별 데이터
+                    quality_monthly_part = (
+                        quality_df[quality_df["부품명"] == part]
+                        .groupby("발생월")
+                        .size()
+                        if "발생월" in quality_df.columns
+                        else pd.Series()
+                    )
+
+                    # 가압검사 라인 (기본 색상, 실선)
+                    pressure_y_values = [
+                        pressure_monthly_part.get(month, 0) for month in months
+                    ]
+                    fig_parts.add_trace(
+                        go.Scatter(
+                            name=f"{part} (가압검사)",
+                            x=month_names,
+                            y=pressure_y_values,
+                            mode="lines+markers",
+                            line=dict(color=base_color, width=3, dash="solid"),
+                            marker=dict(size=8, symbol="circle"),
+                            hovertemplate=f"<b>{part} - 가압검사</b><br>%{{x}}: %{{y}}건<extra></extra>",
+                            visible=False,  # 기본 숨김
+                            showlegend=True,
+                        )
+                    )
+
+                    # 제조품질 라인 (옅은 색상, 점선)
+                    quality_y_values = [
+                        quality_monthly_part.get(month, 0) for month in months
+                    ]
+                    fig_parts.add_trace(
+                        go.Scatter(
+                            name=f"{part} (제조품질)",
+                            x=month_names,
+                            y=quality_y_values,
+                            mode="lines+markers",
+                            line=dict(color=light_color, width=3, dash="dash"),
+                            marker=dict(size=8, symbol="diamond"),
+                            hovertemplate=f"<b>{part} - 제조품질</b><br>%{{x}}: %{{y}}건<extra></extra>",
+                            visible=False,  # 기본 숨김
+                            showlegend=True,
+                        )
+                    )
+
             # 드롭다운 메뉴 설정
             total_main_traces = 2  # 가압검사 + 제조품질
             total_bar_traces = 5  # TOP5 부품 (분기별)
             total_line_traces = 3  # TOP3 부품 (월별)
+            total_comparison_traces = (
+                10  # TOP5 부품별 검사공정 비교 (각 부품당 가압검사+제조품질 = 5*2)
+            )
 
             # 가시성 설정
             visibility_main = [True, True] + [False] * (
-                total_bar_traces + total_line_traces
+                total_bar_traces + total_line_traces + total_comparison_traces
             )  # 전체분포: 가압검사 + 제조품질
             visibility_bar = (
-                [False, False] + [True] * total_bar_traces + [False] * total_line_traces
+                [False, False]
+                + [True] * total_bar_traces
+                + [False] * total_line_traces
+                + [False] * total_comparison_traces
             )  # 분기별
-            visibility_line = [False] * (total_main_traces + total_bar_traces) + [
+            visibility_line = (
+                [False] * (total_main_traces + total_bar_traces)
+                + [True] * total_line_traces
+                + [False] * total_comparison_traces
+            )  # 월별
+            visibility_comparison = [False] * (
+                total_main_traces + total_bar_traces + total_line_traces
+            ) + [
                 True
-            ] * total_line_traces  # 월별
+            ] * total_comparison_traces  # 부품별 검사공정 비교
 
             fig_parts.update_layout(
                 title="🔧 공통 부품별 전체 분포 TOP10 (통합분석)",
@@ -933,6 +1061,26 @@ class DashboardBuilder(BaseVisualizer):
                                     {"visible": visibility_line},
                                     {
                                         "title": "🔧 공통 부품별 월별 추이 TOP3 (통합분석)",
+                                        "xaxis": {
+                                            "title": "월",
+                                            "visible": True,
+                                            "showgrid": True,
+                                        },
+                                        "yaxis": {
+                                            "title": "불량 건수",
+                                            "visible": True,
+                                            "showgrid": True,
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "label": "부품별 검사공정 비교 (TOP5)",
+                                "method": "update",
+                                "args": [
+                                    {"visible": visibility_comparison},
+                                    {
+                                        "title": "🔧 부품별 검사공정 비교 TOP5 (월별 추이)",
                                         "xaxis": {
                                             "title": "월",
                                             "visible": True,
