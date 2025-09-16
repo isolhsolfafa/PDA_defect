@@ -937,9 +937,35 @@ class DashboardBuilder(BaseVisualizer):
                     )
 
                     # 가압검사 라인 (기본 색상, 실선)
-                    pressure_y_values = [
-                        pressure_monthly_part.get(month, 0) for month in months
-                    ]
+                    pressure_y_values = []
+                    pressure_hover_texts = []
+
+                    for j, month in enumerate(months):
+                        month_name = month_names[j]
+                        monthly_count = pressure_monthly_part.get(month, 0)
+                        pressure_y_values.append(monthly_count)
+
+                        # 해당 월, 해당 부품의 가압검사 상세 정보
+                        month_pressure_df = pressure_df[
+                            (pressure_df["발생월"] == month)
+                            & (pressure_df["부품명"] == part)
+                        ]
+
+                        # 불량위치 상위 3개 추출
+                        pressure_locations = (
+                            month_pressure_df["불량위치"].dropna().unique()[:3]
+                            if "불량위치" in month_pressure_df.columns
+                            else []
+                        )
+
+                        hover_text = f"<b>{month_name}: {part} (가압검사)</b><br>불량 건수: {monthly_count}건<br><br>"
+                        if len(pressure_locations) > 0:
+                            hover_text += "<b>주요 불량위치:</b><br>"
+                            for idx, location in enumerate(pressure_locations, 1):
+                                hover_text += f"{idx}. {location}<br>"
+
+                        pressure_hover_texts.append(hover_text)
+
                     fig_parts.add_trace(
                         go.Scatter(
                             name=f"{part} (가압검사)",
@@ -948,16 +974,43 @@ class DashboardBuilder(BaseVisualizer):
                             mode="lines+markers",
                             line=dict(color=base_color, width=3, dash="solid"),
                             marker=dict(size=8, symbol="circle"),
-                            hovertemplate=f"<b>{part} - 가압검사</b><br>%{{x}}: %{{y}}건<extra></extra>",
+                            hovertemplate="%{hovertext}<extra></extra>",
+                            hovertext=pressure_hover_texts,
                             visible=False,  # 기본 숨김
                             showlegend=True,
                         )
                     )
 
                     # 제조품질 라인 (옅은 색상, 점선)
-                    quality_y_values = [
-                        quality_monthly_part.get(month, 0) for month in months
-                    ]
+                    quality_y_values = []
+                    quality_hover_texts = []
+
+                    for j, month in enumerate(months):
+                        month_name = month_names[j]
+                        monthly_count = quality_monthly_part.get(month, 0)
+                        quality_y_values.append(monthly_count)
+
+                        # 해당 월, 해당 부품의 제조품질 상세 정보
+                        month_quality_df = quality_df[
+                            (quality_df["발생월"] == month)
+                            & (quality_df["부품명"] == part)
+                        ]
+
+                        # 불량위치 상위 3개 추출
+                        quality_locations = (
+                            month_quality_df["불량위치"].dropna().unique()[:3]
+                            if "불량위치" in month_quality_df.columns
+                            else []
+                        )
+
+                        hover_text = f"<b>{month_name}: {part} (제조품질)</b><br>불량 건수: {monthly_count}건<br><br>"
+                        if len(quality_locations) > 0:
+                            hover_text += "<b>주요 불량위치:</b><br>"
+                            for idx, location in enumerate(quality_locations, 1):
+                                hover_text += f"{idx}. {location}<br>"
+
+                        quality_hover_texts.append(hover_text)
+
                     fig_parts.add_trace(
                         go.Scatter(
                             name=f"{part} (제조품질)",
@@ -966,7 +1019,8 @@ class DashboardBuilder(BaseVisualizer):
                             mode="lines+markers",
                             line=dict(color=light_color, width=3, dash="dash"),
                             marker=dict(size=8, symbol="diamond"),
-                            hovertemplate=f"<b>{part} - 제조품질</b><br>%{{x}}: %{{y}}건<extra></extra>",
+                            hovertemplate="%{hovertext}<extra></extra>",
+                            hovertext=quality_hover_texts,
                             visible=False,  # 기본 숨김
                             showlegend=True,
                         )
