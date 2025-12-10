@@ -1982,7 +1982,7 @@ class DashboardBuilder(BaseVisualizer):
                 title="📈 최근 4주 부품별 불량 추이 (TOP5, 통합)",
                 xaxis_title="주차",
                 yaxis_title="불량 건수",
-                height=500,
+                height=550,
                 template="plotly_white",
                 font=dict(family="Malgun Gothic", size=12),
                 legend=dict(
@@ -1993,7 +1993,14 @@ class DashboardBuilder(BaseVisualizer):
                     x=1,
                     font=dict(size=11),
                 ),
-                hovermode="x unified",
+                hovermode="closest",
+                hoverlabel=dict(
+                    bgcolor="white",
+                    bordercolor="gray",
+                    font=dict(family="Malgun Gothic", size=11),
+                    namelength=-1,
+                    align="left",
+                ),
                 margin=dict(l=50, r=50, t=100, b=50),
             )
 
