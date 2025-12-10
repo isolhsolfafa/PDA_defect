@@ -2484,26 +2484,86 @@ class DashboardBuilder(BaseVisualizer):
             border-bottom: 8px solid rgba(0, 0, 0, 0.95);
         }}
 
+        /* Plotly 드롭다운 메뉴 스크롤바 스타일 */
+        .updatemenu-dropdown-container {{
+            max-height: 400px !important;
+        }}
+
+        /* Plotly 드롭다운 내부 스크롤 영역 */
+        .updatemenu-dropdown {{
+            max-height: 350px !important;
+            overflow-y: auto !important;
+        }}
+
+        /* 드롭다운 스크롤바 기본 스타일 */
+        .updatemenu-dropdown::-webkit-scrollbar {{
+            width: 12px !important;
+        }}
+
+        .updatemenu-dropdown::-webkit-scrollbar-track {{
+            background: #f1f1f1 !important;
+            border-radius: 6px !important;
+        }}
+
+        .updatemenu-dropdown::-webkit-scrollbar-thumb {{
+            background: #667eea !important;
+            border-radius: 6px !important;
+            border: 2px solid #f1f1f1 !important;
+        }}
+
+        .updatemenu-dropdown::-webkit-scrollbar-thumb:hover {{
+            background: #764ba2 !important;
+            width: 16px !important;
+        }}
+
+        /* 차트 컨테이너 내 모든 스크롤바 스타일 */
+        .chart-container ::-webkit-scrollbar {{
+            width: 14px !important;
+            height: 14px !important;
+        }}
+
+        .chart-container ::-webkit-scrollbar-track {{
+            background: #e9ecef !important;
+            border-radius: 7px !important;
+        }}
+
+        .chart-container ::-webkit-scrollbar-thumb {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-radius: 7px !important;
+            border: 2px solid #e9ecef !important;
+            min-height: 40px !important;
+        }}
+
+        .chart-container ::-webkit-scrollbar-thumb:hover {{
+            background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%) !important;
+        }}
+
+        /* Firefox 스크롤바 스타일 */
+        .chart-container * {{
+            scrollbar-width: auto !important;
+            scrollbar-color: #667eea #e9ecef !important;
+        }}
+
         @media (max-width: 768px) {{
             .header h1 {{
                 font-size: 2rem;
             }}
-            
+
             .kpi-section {{
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                 gap: 1rem;
                 margin: -2rem auto 2rem auto;
             }}
-            
+
             .kpi-value {{
                 font-size: 2.5rem;
             }}
-            
+
             .tabs {{
                 flex-wrap: wrap;
                 gap: 0.5rem;
             }}
-            
+
             .tab-button {{
                 padding: 0.8rem 1.5rem;
                 font-size: 1rem;
