@@ -70,7 +70,7 @@ class TeamsDataLoader:
             }
 
             # 특정 경로의 파일에 접근: General/99.개인폴더/박승록/
-            file_path = "General/99.개인폴더/박승록"
+            file_path = "General/99.개인폴더/0. 불량&TIME/박승록"
             target_filename = self.config.excel_file_name
 
             try:
