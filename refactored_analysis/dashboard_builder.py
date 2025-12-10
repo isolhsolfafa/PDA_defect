@@ -73,6 +73,11 @@ class DashboardBuilder(BaseVisualizer):
                 self.create_integrated_common_charts()
             )
 
+            # 주차별 분석 차트들 생성
+            weekly_top10_chart, weekly_trend_chart = (
+                self.create_weekly_analysis_charts()
+            )
+
             # 확대/축소 비활성화 config 설정 (모바일 친화적)
             zoom_config = {
                 "scrollZoom": False,
@@ -161,6 +166,18 @@ class DashboardBuilder(BaseVisualizer):
                 config=zoom_config,
             )
 
+            # 주차별 분석 차트 HTML 변환
+            weekly_top10_html = weekly_top10_chart.to_html(
+                include_plotlyjs=False,
+                div_id="weekly-top10-chart",
+                config=zoom_config,
+            )
+            weekly_trend_html = weekly_trend_chart.to_html(
+                include_plotlyjs=False,
+                div_id="weekly-trend-chart",
+                config=zoom_config,
+            )
+
             # 통계 데이터 생성 (엑셀 기준)
             pressure_kpi = self.pressure_charts.extract_kpi_data()
             quality_kpi = self.quality_charts.extract_quality_kpi_data()
@@ -213,6 +230,8 @@ class DashboardBuilder(BaseVisualizer):
                 integrated_kpi_html=integrated_kpi_html,
                 integrated_parts_html=integrated_parts_html,
                 integrated_actions_html=integrated_actions_html,
+                weekly_top10_html=weekly_top10_html,
+                weekly_trend_html=weekly_trend_html,
             )
 
             logger.info("✅ HTML 대시보드 생성 완료")
@@ -1586,6 +1605,411 @@ class DashboardBuilder(BaseVisualizer):
             empty_fig.update_layout(title="차트 생성 오류", height=500)
             return empty_fig, empty_fig
 
+    def create_weekly_analysis_charts(self) -> Tuple[go.Figure, go.Figure]:
+        """주차별 통합 분석 차트 생성 (가압검사 + 제조품질)"""
+        try:
+            logger.info("📊 주차별 통합 분석 차트 생성 시작...")
+
+            # 가압검사와 제조품질 불량내역 데이터 로드
+            pressure_df = (
+                self.pressure_charts.defect_data.copy()
+                if self.pressure_charts.defect_data is not None
+                else pd.DataFrame()
+            )
+            quality_df = (
+                self.quality_charts.quality_defect_data.copy()
+                if self.quality_charts.quality_defect_data is not None
+                else pd.DataFrame()
+            )
+
+            # 데이터 유효성 검사
+            if pressure_df.empty and quality_df.empty:
+                logger.warning("⚠️ 가압검사 및 제조품질 불량내역 데이터가 없음")
+                empty_fig = go.Figure()
+                empty_fig.add_trace(go.Bar(x=["데이터 없음"], y=[1]))
+                empty_fig.update_layout(title="데이터 없음", height=500)
+                return empty_fig, empty_fig
+
+            # He미보증 데이터 제외
+            if not pressure_df.empty and "비고" in pressure_df.columns:
+                pressure_df = pressure_df[
+                    ~pressure_df["비고"]
+                    .astype(str)
+                    .str.contains("He미보증|제조\\(He미보증\\)", case=False, na=False)
+                ]
+            if not quality_df.empty and "비고" in quality_df.columns:
+                quality_df = quality_df[
+                    ~quality_df["비고"]
+                    .astype(str)
+                    .str.contains("He미보증|제조\\(He미보증\\)", case=False, na=False)
+                ]
+
+            # 검사구분 추가
+            if not pressure_df.empty:
+                pressure_df["검사구분"] = "가압검사"
+            if not quality_df.empty:
+                quality_df["검사구분"] = "제조품질"
+
+            # 날짜 컬럼 전처리 (주차 정보 생성)
+            if not pressure_df.empty and "발생일" in pressure_df.columns:
+                pressure_df["발생일_pd"] = pd.to_datetime(
+                    pressure_df["발생일"], errors="coerce"
+                )
+                pressure_df["발생연도"] = pressure_df["발생일_pd"].dt.year
+                pressure_df["발생주차"] = pressure_df["발생일_pd"].dt.isocalendar().week
+                pressure_df["연도_주차"] = pressure_df.apply(
+                    lambda x: (
+                        f"{int(x['발생연도'])}-W{int(x['발생주차']):02d}"
+                        if pd.notna(x["발생연도"]) and pd.notna(x["발생주차"])
+                        else None
+                    ),
+                    axis=1,
+                )
+
+            if not quality_df.empty and "발생일" in quality_df.columns:
+                quality_df["발생일_pd"] = pd.to_datetime(
+                    quality_df["발생일"], errors="coerce"
+                )
+                quality_df["발생연도"] = quality_df["발생일_pd"].dt.year
+                quality_df["발생주차"] = quality_df["발생일_pd"].dt.isocalendar().week
+                quality_df["연도_주차"] = quality_df.apply(
+                    lambda x: (
+                        f"{int(x['발생연도'])}-W{int(x['발생주차']):02d}"
+                        if pd.notna(x["발생연도"]) and pd.notna(x["발생주차"])
+                        else None
+                    ),
+                    axis=1,
+                )
+
+            # 통합 데이터프레임 생성
+            combined_df = pd.concat(
+                [df for df in [pressure_df, quality_df] if not df.empty],
+                ignore_index=True,
+            )
+
+            if combined_df.empty or "연도_주차" not in combined_df.columns:
+                logger.warning("⚠️ 주차 정보를 추출할 수 없음")
+                empty_fig = go.Figure()
+                empty_fig.add_trace(go.Bar(x=["데이터 없음"], y=[1]))
+                empty_fig.update_layout(title="주차 데이터 없음", height=500)
+                return empty_fig, empty_fig
+
+            # 유효한 주차 데이터만 필터링
+            combined_df = combined_df.dropna(subset=["연도_주차"])
+
+            # 전체 주차 목록 (정렬)
+            all_weeks = sorted(combined_df["연도_주차"].unique())
+            logger.info(f"📅 전체 주차 목록: {len(all_weeks)}개 주차")
+
+            if len(all_weeks) == 0:
+                empty_fig = go.Figure()
+                empty_fig.add_trace(go.Bar(x=["데이터 없음"], y=[1]))
+                empty_fig.update_layout(title="주차 데이터 없음", height=500)
+                return empty_fig, empty_fig
+
+            # 가장 최근 주차
+            latest_week = all_weeks[-1]
+            logger.info(f"📅 최근 주차: {latest_week}")
+
+            # ========== 차트 1: 주차별 TOP10 부품 막대차트 (드롭다운) ==========
+            fig_weekly_top10 = go.Figure()
+
+            # 각 주차별 데이터 준비
+            weekly_data = {}
+            for week in all_weeks:
+                week_df = combined_df[combined_df["연도_주차"] == week]
+                if "부품명" in week_df.columns:
+                    parts_count = week_df["부품명"].value_counts().head(10)
+                    weekly_data[week] = parts_count
+
+            # 전주 대비 증감 계산 함수
+            def get_change_indicator(current_week, part, weekly_data, all_weeks):
+                week_idx = list(all_weeks).index(current_week)
+                if week_idx == 0:
+                    return "", 0  # 첫 주는 비교 대상 없음
+
+                prev_week = all_weeks[week_idx - 1]
+                current_count = weekly_data.get(
+                    current_week, pd.Series(dtype="int64")
+                ).get(part, 0)
+                prev_count = weekly_data.get(prev_week, pd.Series(dtype="int64")).get(
+                    part, 0
+                )
+
+                diff = current_count - prev_count
+                if diff > 0:
+                    return f"↑{diff}", diff
+                elif diff < 0:
+                    return f"↓{abs(diff)}", diff
+                else:
+                    return "→", 0
+
+            # 각 주차별 막대차트 트레이스 추가
+            for week_idx, week in enumerate(all_weeks):
+                if week not in weekly_data or weekly_data[week].empty:
+                    continue
+
+                parts = weekly_data[week]
+                parts_list = list(parts.index)
+                counts_list = list(parts.values)
+
+                # 전주 대비 증감 정보 추가
+                change_texts = []
+                hover_texts = []
+
+                for part in parts_list:
+                    change_str, diff = get_change_indicator(
+                        week, part, weekly_data, all_weeks
+                    )
+                    count = parts.get(part, 0)
+                    change_texts.append(
+                        f"{count}건 {change_str}" if change_str else f"{count}건"
+                    )
+
+                    # hover 텍스트 생성
+                    week_df = combined_df[
+                        (combined_df["연도_주차"] == week)
+                        & (combined_df["부품명"] == part)
+                    ]
+
+                    # 검사구분별 카운트
+                    pressure_count = len(week_df[week_df["검사구분"] == "가압검사"])
+                    quality_count = len(week_df[week_df["검사구분"] == "제조품질"])
+
+                    # 주요 불량위치
+                    locations = (
+                        week_df["불량위치"].dropna().value_counts().head(3)
+                        if "불량위치" in week_df.columns
+                        else pd.Series()
+                    )
+
+                    # 주요 상세불량내용
+                    defect_details = (
+                        week_df["상세불량내용"].dropna().value_counts().head(3)
+                        if "상세불량내용" in week_df.columns
+                        else pd.Series()
+                    )
+
+                    hover = f"<b>{week} - {part}</b><br>"
+                    hover += f"총 불량: {count}건<br>"
+                    hover += f"├ 가압검사: {pressure_count}건<br>"
+                    hover += f"└ 제조품질: {quality_count}건<br>"
+
+                    if diff != 0:
+                        hover += f"<br><b>전주 대비:</b> {'+' if diff > 0 else ''}{diff}건<br>"
+
+                    if not locations.empty:
+                        hover += "<br><b>주요 불량위치:</b><br>"
+                        for loc, loc_count in locations.items():
+                            hover += f"  • {loc} ({loc_count}건)<br>"
+
+                    if not defect_details.empty:
+                        hover += "<br><b>주요 불량내용:</b><br>"
+                        for detail, detail_count in defect_details.items():
+                            detail_short = (
+                                detail[:20] + "..." if len(str(detail)) > 20 else detail
+                            )
+                            hover += f"  • {detail_short} ({detail_count}건)<br>"
+
+                    hover_texts.append(hover)
+
+                # 색상 설정 (증감에 따라)
+                colors = []
+                for part in parts_list:
+                    _, diff = get_change_indicator(week, part, weekly_data, all_weeks)
+                    if diff > 0:
+                        colors.append("#FF6B6B")  # 증가 - 빨강
+                    elif diff < 0:
+                        colors.append("#4ECDC4")  # 감소 - 청록
+                    else:
+                        colors.append("#45B7D1")  # 동일 - 파랑
+
+                fig_weekly_top10.add_trace(
+                    go.Bar(
+                        name=week,
+                        x=parts_list,
+                        y=counts_list,
+                        text=change_texts,
+                        textposition="outside",
+                        textfont=dict(size=10),
+                        marker_color=colors,
+                        hovertemplate="%{customdata}<extra></extra>",
+                        customdata=hover_texts,
+                        visible=(week == latest_week),  # 최근 주차만 표시
+                    )
+                )
+
+            # 드롭다운 메뉴 생성
+            dropdown_buttons = []
+            for week_idx, week in enumerate(all_weeks):
+                visibility = [False] * len(all_weeks)
+                visibility[week_idx] = True
+                dropdown_buttons.append(
+                    {
+                        "label": week,
+                        "method": "update",
+                        "args": [
+                            {"visible": visibility},
+                            {"title": f"📅 {week} 주차 불량 부품 TOP10 (통합)"},
+                        ],
+                    }
+                )
+
+            fig_weekly_top10.update_layout(
+                title=f"📅 {latest_week} 주차 불량 부품 TOP10 (통합)",
+                xaxis_title="부품명",
+                yaxis_title="불량 건수",
+                height=550,
+                template="plotly_white",
+                font=dict(family="Malgun Gothic", size=12),
+                updatemenus=[
+                    {
+                        "buttons": dropdown_buttons,
+                        "direction": "down",
+                        "showactive": True,
+                        "x": 0.0,
+                        "xanchor": "left",
+                        "y": 1.15,
+                        "yanchor": "top",
+                        "bgcolor": "white",
+                        "bordercolor": "#667eea",
+                        "borderwidth": 1,
+                    }
+                ],
+                margin=dict(l=50, r=50, t=100, b=100),
+                xaxis=dict(tickangle=-45),
+                annotations=[
+                    dict(
+                        text="<b>색상 범례:</b> 🔴 전주대비 증가 | 🔵 동일 | 🟢 감소",
+                        xref="paper",
+                        yref="paper",
+                        x=1,
+                        y=1.12,
+                        showarrow=False,
+                        font=dict(size=11),
+                        xanchor="right",
+                    )
+                ],
+            )
+
+            # ========== 차트 2: 최근 4주 부품별 트렌드 라인차트 ==========
+            fig_weekly_trend = go.Figure()
+
+            # 최근 4주 추출
+            recent_4_weeks = all_weeks[-4:] if len(all_weeks) >= 4 else all_weeks
+            logger.info(f"📅 최근 4주: {recent_4_weeks}")
+
+            # 최근 4주 데이터에서 TOP5 부품 추출
+            recent_df = combined_df[combined_df["연도_주차"].isin(recent_4_weeks)]
+            if "부품명" in recent_df.columns:
+                top5_parts = recent_df["부품명"].value_counts().head(5).index.tolist()
+            else:
+                top5_parts = []
+
+            logger.info(f"📊 TOP5 부품: {top5_parts}")
+
+            # 색상 팔레트
+            colors_line = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7"]
+
+            for i, part in enumerate(top5_parts):
+                y_values = []
+                hover_texts = []
+
+                for week in recent_4_weeks:
+                    week_part_df = combined_df[
+                        (combined_df["연도_주차"] == week)
+                        & (combined_df["부품명"] == part)
+                    ]
+                    count = len(week_part_df)
+                    y_values.append(count)
+
+                    # 검사구분별 카운트
+                    pressure_count = len(
+                        week_part_df[week_part_df["검사구분"] == "가압검사"]
+                    )
+                    quality_count = len(
+                        week_part_df[week_part_df["검사구분"] == "제조품질"]
+                    )
+
+                    # 주요 불량위치
+                    locations = (
+                        week_part_df["불량위치"].dropna().value_counts().head(3)
+                        if "불량위치" in week_part_df.columns
+                        else pd.Series()
+                    )
+
+                    hover = f"<b>{week} - {part}</b><br>"
+                    hover += f"총 불량: {count}건<br>"
+                    hover += f"├ 가압검사: {pressure_count}건<br>"
+                    hover += f"└ 제조품질: {quality_count}건<br>"
+
+                    if not locations.empty:
+                        hover += "<br><b>주요 불량위치:</b><br>"
+                        for loc, loc_count in locations.items():
+                            hover += f"  • {loc} ({loc_count}건)<br>"
+
+                    hover_texts.append(hover)
+
+                # 전주 대비 최종 증감 계산
+                if len(y_values) >= 2:
+                    final_diff = y_values[-1] - y_values[-2]
+                    if final_diff > 0:
+                        trend_indicator = f" ↑{final_diff}"
+                    elif final_diff < 0:
+                        trend_indicator = f" ↓{abs(final_diff)}"
+                    else:
+                        trend_indicator = " →"
+                else:
+                    trend_indicator = ""
+
+                fig_weekly_trend.add_trace(
+                    go.Scatter(
+                        name=f"{part}{trend_indicator}",
+                        x=list(recent_4_weeks),
+                        y=y_values,
+                        mode="lines+markers+text",
+                        line=dict(color=colors_line[i % len(colors_line)], width=3),
+                        marker=dict(size=10, color=colors_line[i % len(colors_line)]),
+                        text=[f"{v}" for v in y_values],
+                        textposition="top center",
+                        textfont=dict(size=10),
+                        hovertemplate="%{customdata}<extra></extra>",
+                        customdata=hover_texts,
+                    )
+                )
+
+            fig_weekly_trend.update_layout(
+                title="📈 최근 4주 부품별 불량 추이 (TOP5, 통합)",
+                xaxis_title="주차",
+                yaxis_title="불량 건수",
+                height=500,
+                template="plotly_white",
+                font=dict(family="Malgun Gothic", size=12),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1,
+                    font=dict(size=11),
+                ),
+                hovermode="x unified",
+                margin=dict(l=50, r=50, t=100, b=50),
+            )
+
+            logger.info("✅ 주차별 통합 분석 차트 생성 완료")
+            return fig_weekly_top10, fig_weekly_trend
+
+        except Exception as e:
+            logger.error(f"❌ 주차별 분석 차트 생성 실패: {e}")
+            import traceback
+
+            logger.error(traceback.format_exc())
+            empty_fig = go.Figure()
+            empty_fig.add_trace(go.Bar(x=["오류"], y=[1], text=["차트 생성 실패"]))
+            empty_fig.update_layout(title="차트 생성 오류", height=500)
+            return empty_fig, empty_fig
+
     def _get_html_template(self) -> str:
         """HTML 템플릿 반환 (새로운 디자인)"""
         return """
@@ -2182,6 +2606,7 @@ class DashboardBuilder(BaseVisualizer):
             <button class="tab-button active" onclick="showTab('pressure')"><span>가압검사</span></button>
             <button class="tab-button" onclick="showTab('quality')"><span>제조품질</span></button>
             <button class="tab-button" onclick="showTab('integrated')"><span>통합비교</span></button>
+            <button class="tab-button" onclick="showTab('weekly')"><span>주차별 분석</span></button>
         </div>
         
         <div id="pressure-tab" class="tab-content active">
@@ -2242,16 +2667,28 @@ class DashboardBuilder(BaseVisualizer):
         
         <div id="integrated-tab" class="tab-content">
             <h2>🔄 통합 비교 분석</h2>
-            
+
             <div class="chart-container">{integrated_monthly_html}</div>
             <div class="chart-container">{integrated_kpi_html}</div>
-            
+
             <h3>📊 공정 표준화를 위한 통합 분석</h3>
             <div class="chart-container">{integrated_parts_html}</div>
             <div class="chart-container">{integrated_actions_html}</div>
         </div>
+
+        <div id="weekly-tab" class="tab-content">
+            <h2>📅 주차별 불량 분석</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">
+                가압검사 + 제조품질 통합 데이터 기준 | 드롭다운으로 주차 선택 가능
+            </p>
+
+            <div class="chart-container">{weekly_top10_html}</div>
+
+            <h3>📈 최근 4주 트렌드 분석</h3>
+            <div class="chart-container">{weekly_trend_html}</div>
+        </div>
     </div>
-    
+
     <script>
         function showTab(tabName) {{
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
