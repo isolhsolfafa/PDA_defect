@@ -2108,7 +2108,50 @@ class DashboardBuilder(BaseVisualizer):
             opacity: 0.9;
             font-weight: 300;
         }}
-        
+
+        /* 연도 선택 드롭다운 스타일 */
+        .year-selector {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }}
+
+        .year-selector-label {{
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: white;
+        }}
+
+        .year-dropdown {{
+            background: white;
+            border: none;
+            border-radius: 15px;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #667eea;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }}
+
+        .year-dropdown:hover {{
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }}
+
+        .year-dropdown option {{
+            font-weight: 600;
+            color: #333;
+        }}
+
         .container {{
             max-width: 1400px;
             margin: 0 auto;
@@ -2660,6 +2703,13 @@ class DashboardBuilder(BaseVisualizer):
                 </div>
             </h1>
             <p>{current_year}년 통합 검사(가압검사 + 제조품질) 불량 현황 및 분석</p>
+            <div class="year-selector">
+                <span class="year-selector-label">📊 데이터 연도:</span>
+                <select class="year-dropdown" id="year-select" onchange="changeYear(this.value)">
+                    <option value="2026" selected>2026년</option>
+                    <option value="2025">2025년</option>
+                </select>
+            </div>
             <div class="timestamp">
                 <span class="timestamp-label">📅 마지막 업데이트:</span>
                 <span class="timestamp-value">{timestamp}</span>
@@ -2806,7 +2856,7 @@ class DashboardBuilder(BaseVisualizer):
             const title = document.getElementById('dashboard-title');
             const tooltip = document.getElementById('title-tooltip');
             let showTimeout, hideTimeout;
-            
+
             if (title && tooltip) {{
                 title.addEventListener('mouseenter', function() {{
                     clearTimeout(hideTimeout);
@@ -2814,7 +2864,7 @@ class DashboardBuilder(BaseVisualizer):
                         tooltip.classList.add('show');
                     }}, 300);
                 }});
-                
+
                 title.addEventListener('mouseleave', function() {{
                     clearTimeout(showTimeout);
                     hideTimeout = setTimeout(() => {{
@@ -2823,6 +2873,18 @@ class DashboardBuilder(BaseVisualizer):
                 }});
             }}
         }});
+
+        // 연도 변경 함수
+        function changeYear(year) {{
+            const yearUrls = {{
+                '2026': './internal.html',
+                '2025': './2025/internal.html'
+            }};
+
+            if (yearUrls[year]) {{
+                window.location.href = yearUrls[year];
+            }}
+        }}
     </script>
 </body>
 </html>
