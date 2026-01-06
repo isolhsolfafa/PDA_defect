@@ -68,8 +68,10 @@ class TeamsConfig:
     site_id: str = os.getenv("TEAMS_SITE_ID", "")  # SharePoint 사이트 ID
     drive_id: str = os.getenv("TEAMS_DRIVE_ID", "")  # 드라이브 ID
 
-    # 파일 정보 (연도별 파일명)
-    excel_file_name: str = "▶2026年 검사 통합 Sheet.xlsm"  # Teams에서 공유되는 엑셀 파일명
+    # 파일 정보 (연도별 파일명) - 환경변수로 오버라이드 가능
+    excel_file_name: str = os.getenv(
+        "TEAMS_EXCEL_FILE_NAME", "▶2026年 검사 통합 Sheet.xlsm"
+    )  # Teams에서 공유되는 엑셀 파일명
     worksheet_names: List[str] = None  # 워크시트명 리스트
 
     # API 스코프
