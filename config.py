@@ -40,11 +40,11 @@ class GoogleSheetsConfig:
     """Google Sheets 설정"""
 
     service_account_file: str = (
-        "credentials/gst-manegemnet-70faf8ce1bff.json"  # 상대경로로 변경
+        "credentials/gst-manegemnet-e6c4e7bd79e2.json"  # 새로운 service key로 변경
     )
     spreadsheet_id: str = "19dkwKNW6VshCg3wTemzmbbQlbATfq6brAWluaps1Rm0"
     sheet_name: str = "월생산물량"
-    fallback_sheet_name: str = "월생산물량"
+    fallback_sheet_name: str = "8월생산물량"
     scopes: List[str] = None
 
     def __post_init__(self):
@@ -68,10 +68,8 @@ class TeamsConfig:
     site_id: str = os.getenv("TEAMS_SITE_ID", "")  # SharePoint 사이트 ID
     drive_id: str = os.getenv("TEAMS_DRIVE_ID", "")  # 드라이브 ID
 
-    # 파일 정보
-    excel_file_name: str = (
-        "▶2025年 검사 통합 Sheet [ 수정 금지 ]"  # Teams에서 공유되는 엑셀 파일명
-    )
+    # 파일 정보 (연도별 파일명)
+    excel_file_name: str = "▶2026年 검사 통합 Sheet.xlsm"  # Teams에서 공유되는 엑셀 파일명
     worksheet_names: List[str] = None  # 워크시트명 리스트
 
     # API 스코프
