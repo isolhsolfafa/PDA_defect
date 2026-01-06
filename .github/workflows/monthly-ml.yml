@@ -89,8 +89,12 @@ jobs:
         echo "GH_TOKEN_2=$GH_TOKEN_2" >> $GITHUB_ENV
         
     - name: Run ML model retrain
+      env:
+        # ML 분석은 데이터가 충분한 2025년 파일 사용
+        TEAMS_EXCEL_FILE_NAME: "▶2025年 검사 통합 Sheet [ 수정 금지 ].xlsm"
       run: |
         echo "🤖 Starting monthly ML model retrain..."
+        echo "📊 Using data file: $TEAMS_EXCEL_FILE_NAME"
         python run_main.py --mode retrain
         
     - name: Upload model artifacts
