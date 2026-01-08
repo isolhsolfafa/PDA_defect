@@ -46,6 +46,7 @@ class DashboardBuilder(BaseVisualizer):
 
             # 가압검사 차트들 생성
             monthly_chart = self.pressure_charts.create_monthly_trend_chart()
+            model_chart = self.pressure_charts.create_model_inspection_defect_chart()
             action_chart = self.pressure_charts.create_action_type_integrated_chart()
             supplier_chart = self.pressure_charts.create_supplier_integrated_chart()
             part_chart = self.pressure_charts.create_part_monthly_chart()
@@ -54,6 +55,9 @@ class DashboardBuilder(BaseVisualizer):
             # 제조품질 차트들 생성
             quality_monthly_chart = (
                 self.quality_charts.create_quality_monthly_trend_chart()
+            )
+            quality_model_chart = (
+                self.quality_charts.create_model_inspection_defect_chart()
             )
             quality_action_chart = (
                 self.quality_charts.create_quality_action_integrated_chart()
@@ -101,6 +105,9 @@ class DashboardBuilder(BaseVisualizer):
             monthly_html = monthly_chart.to_html(
                 include_plotlyjs="cdn", div_id="monthly-chart", config=zoom_config
             )
+            model_html = model_chart.to_html(
+                include_plotlyjs=False, div_id="model-chart", config=zoom_config
+            )
             action_integrated_html = action_chart.to_html(
                 include_plotlyjs=False,
                 div_id="action-integrated-chart",
@@ -123,6 +130,11 @@ class DashboardBuilder(BaseVisualizer):
             quality_monthly_html = quality_monthly_chart.to_html(
                 include_plotlyjs=False,
                 div_id="quality-monthly-chart",
+                config=zoom_config,
+            )
+            quality_model_html = quality_model_chart.to_html(
+                include_plotlyjs=False,
+                div_id="quality-model-chart",
                 config=zoom_config,
             )
             quality_action_html = quality_action_chart.to_html(
@@ -218,11 +230,13 @@ class DashboardBuilder(BaseVisualizer):
                 quality_avg_rate=quality_avg_rate,
                 quality_supplier_count=quality_supplier_count,
                 monthly_html=monthly_html,
+                model_html=model_html,
                 action_integrated_html=action_integrated_html,
                 supplier_integrated_html=supplier_integrated_html,
                 part_integrated_html=part_integrated_html,
                 part_monthly_html=part_monthly_html,
                 quality_monthly_html=quality_monthly_html,
+                quality_model_html=quality_model_html,
                 quality_action_html=quality_action_html,
                 quality_supplier_html=quality_supplier_html,
                 quality_part_integrated_html=quality_part_integrated_html,
@@ -2749,6 +2763,7 @@ class DashboardBuilder(BaseVisualizer):
             </div>
             
             <div class="chart-container">{monthly_html}</div>
+            <div class="chart-container">{model_html}</div>
             <div class="chart-container">{action_integrated_html}</div>
             <div class="chart-container">{supplier_integrated_html}</div>
             <div class="chart-container">{part_integrated_html}</div>
@@ -2777,6 +2792,7 @@ class DashboardBuilder(BaseVisualizer):
             </div>
             
             <div class="chart-container">{quality_monthly_html}</div>
+            <div class="chart-container">{quality_model_html}</div>
             <div class="chart-container">{quality_action_html}</div>
             <div class="chart-container">{quality_supplier_html}</div>
             <div class="chart-container">{quality_part_integrated_html}</div>
