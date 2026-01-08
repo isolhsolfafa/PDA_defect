@@ -70,13 +70,13 @@ class PressureCharts(BaseVisualizer):
                 logger.warning("⚠️ 가압 불량분석 워크시트를 찾을 수 없음")
                 raise ValueError("가압 불량분석 워크시트 없음")
 
-            # 특정 셀 값 직접 읽기
-            total_ch_cell = worksheet["O4"].value  # 총 검사 CH수
-            total_defects_cell = worksheet["O13"].value  # 총 불량 건수
-            avg_rate_cell = worksheet["O14"].value  # 평균 불량률
+            # 특정 셀 값 직접 읽기 (2026년 1월 행 추가로 O→P열로 변경)
+            total_ch_cell = worksheet["P4"].value  # 총 검사 CH수
+            total_defects_cell = worksheet["P13"].value  # 총 불량 건수
+            avg_rate_cell = worksheet["P14"].value  # 평균 불량률
 
             logger.info(
-                f"📊 엑셀 셀 원본 값 - O4: {total_ch_cell}, O13: {total_defects_cell}, O14: {avg_rate_cell}"
+                f"📊 엑셀 셀 원본 값 - P4: {total_ch_cell}, P13: {total_defects_cell}, P14: {avg_rate_cell}"
             )
 
             # 데이터 타입 변환 및 검증
@@ -260,17 +260,17 @@ class PressureCharts(BaseVisualizer):
 
                     action_type = str(row.iloc[1]).strip()
 
-                    # O열(누적값) 데이터 찾기 - 14번째 컬럼 (O열)
+                    # P열(누적값) 데이터 찾기 - 15번째 컬럼 (P열, 2026년 1월 행 추가로 변경)
                     count = 0
-                    if len(self.analysis_data.columns) > 14:  # O열이 존재하는 경우
-                        cell_value = row.iloc[14]  # O열 (0-based index: 14)
+                    if len(self.analysis_data.columns) > 15:  # P열이 존재하는 경우
+                        cell_value = row.iloc[15]  # P열 (0-based index: 15)
                         if (
                             pd.notna(cell_value)
                             and str(cell_value).replace(".", "").isdigit()
                         ):
                             count = int(float(cell_value))
 
-                    # O열에 데이터가 없으면 마지막 컬럼에서 역순으로 찾기
+                    # P열에 데이터가 없으면 마지막 컬럼에서 역순으로 찾기
                     if count == 0:
                         for col_idx in range(
                             len(self.analysis_data.columns) - 1, 1, -1
@@ -405,22 +405,22 @@ class PressureCharts(BaseVisualizer):
                         and len(supplier_name) <= 5
                         and supplier_name.isalpha()
                     ):
-                        # O열(총계) 데이터 추출 (15번째 컬럼, 0-indexed로 14)
+                        # P열(총계) 데이터 추출 (16번째 컬럼, 0-indexed로 15, 2026년 1월 행 추가로 변경)
                         total_count = 0
-                        if len(row) > 14:  # O열 존재 확인
-                            cell_value = row.iloc[14]  # O열
+                        if len(row) > 15:  # P열 존재 확인
+                            cell_value = row.iloc[15]  # P열
                             if (
                                 pd.notna(cell_value)
                                 and str(cell_value).replace(".", "").isdigit()
                             ):
                                 total_count = int(float(cell_value))
 
-                        # 다음 행에서 비율 정보 추출 (O열에서)
+                        # 다음 행에서 비율 정보 추출 (P열에서)
                         rate = 0
                         if idx + 1 < len(self.analysis_data):
                             rate_row = self.analysis_data.iloc[idx + 1]
-                            if len(rate_row) > 14:  # O열 존재 확인
-                                cell_value = rate_row.iloc[14]  # O열 비율
+                            if len(rate_row) > 15:  # P열 존재 확인
+                                cell_value = rate_row.iloc[15]  # P열 비율
                                 if pd.notna(cell_value) and isinstance(
                                     cell_value, (int, float)
                                 ):
