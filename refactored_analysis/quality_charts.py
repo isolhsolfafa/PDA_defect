@@ -77,14 +77,13 @@ class QualityCharts(BaseVisualizer):
                 logger.warning("⚠️ 제조품질 불량분석 워크시트를 찾을 수 없음")
                 raise ValueError("제조품질 불량분석 워크시트 없음")
 
-            # 제조품질용 특정 셀 값 직접 읽기 (가압검사와 다른 셀 위치일 수 있음)
-            # 일단 동일한 위치에서 시도하고, 필요시 다른 셀로 변경
-            total_ch_cell = worksheet["O4"].value  # 총 검사 CH수
-            total_defects_cell = worksheet["O12"].value  # 총 불량 건수
-            avg_rate_cell = worksheet["O13"].value  # 평균 불량률
+            # 제조품질용 특정 셀 값 직접 읽기 (2026년 1월 행 추가로 O→P열로 변경)
+            total_ch_cell = worksheet["P4"].value  # 총 검사 CH수
+            total_defects_cell = worksheet["P12"].value  # 총 불량 건수
+            avg_rate_cell = worksheet["P13"].value  # 평균 불량률
 
             logger.info(
-                f"📊 제조품질 엑셀 셀 원본 값 - O4: {total_ch_cell}, O12: {total_defects_cell}, O13: {avg_rate_cell}"
+                f"📊 제조품질 엑셀 셀 원본 값 - P4: {total_ch_cell}, P12: {total_defects_cell}, P13: {avg_rate_cell}"
             )
 
             # 데이터 타입 변환 및 검증
@@ -830,22 +829,22 @@ class QualityCharts(BaseVisualizer):
                         and 3 <= len(supplier_name) <= 10
                         and not supplier_name.isdigit()
                     ):
-                        # O열(누적값) 데이터 찾기 - 14번째 컬럼 (O열)
+                        # P열(누적값) 데이터 찾기 - 15번째 컬럼 (P열, 2026년 1월 행 추가로 변경)
                         total_count = 0
                         if (
-                            len(self.quality_analysis_data.columns) > 14
-                        ):  # O열이 존재하는 경우
-                            cell_value = row.iloc[14]  # O열 (0-based index: 14)
+                            len(self.quality_analysis_data.columns) > 15
+                        ):  # P열이 존재하는 경우
+                            cell_value = row.iloc[15]  # P열 (0-based index: 15)
                             if (
                                 pd.notna(cell_value)
                                 and str(cell_value).replace(".", "").isdigit()
                             ):
                                 total_count = int(float(cell_value))
 
-                        # O열에 데이터가 없으면 월별 데이터 합계로 계산
+                        # P열에 데이터가 없으면 월별 데이터 합계로 계산
                         if total_count == 0:
                             for col_idx in range(
-                                2, min(len(self.quality_analysis_data.columns), 14)
+                                2, min(len(self.quality_analysis_data.columns), 15)
                             ):  # 월별 데이터
                                 cell_value = row.iloc[col_idx]
                                 if (
@@ -854,23 +853,23 @@ class QualityCharts(BaseVisualizer):
                                 ):
                                     total_count += int(float(cell_value))
 
-                        # 다음 행에서 비율 정보 추출 (O열에서 직접)
+                        # 다음 행에서 비율 정보 추출 (P열에서 직접)
                         rate = 0
                         if idx + 1 < len(self.quality_analysis_data):
                             rate_row = self.quality_analysis_data.iloc[idx + 1]
-                            # O열에서 비율 직접 읽기
-                            if len(self.quality_analysis_data.columns) > 14:
-                                rate_cell = rate_row.iloc[14]  # O열
+                            # P열에서 비율 직접 읽기
+                            if len(self.quality_analysis_data.columns) > 15:
+                                rate_cell = rate_row.iloc[15]  # P열
                                 if pd.notna(rate_cell) and isinstance(
                                     rate_cell, (int, float)
                                 ):
                                     rate = float(rate_cell) * 100  # 백분율로 변환
 
-                            # O열에 비율이 없으면 월별 평균 계산
+                            # P열에 비율이 없으면 월별 평균 계산
                             if rate == 0:
                                 rate_values = []
                                 for col_idx in range(
-                                    2, min(len(self.quality_analysis_data.columns), 14)
+                                    2, min(len(self.quality_analysis_data.columns), 15)
                                 ):
                                     cell_value = rate_row.iloc[col_idx]
                                     if pd.notna(cell_value) and isinstance(
