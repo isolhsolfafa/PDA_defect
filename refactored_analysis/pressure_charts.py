@@ -29,6 +29,7 @@ class PressureCharts(BaseVisualizer):
 
     def __init__(self):
         super().__init__()
+        self.daily_inspection_data = None
 
     def load_analysis_data(self) -> pd.DataFrame:
         """불량분석 워크시트 데이터 로드"""
@@ -41,6 +42,12 @@ class PressureCharts(BaseVisualizer):
         if self.defect_data is None:
             self.defect_data = self._load_excel_data("가압 불량내역")
         return self.defect_data
+
+    def load_daily_inspection_data(self) -> pd.DataFrame:
+        """날짜별 실적 워크시트 데이터 로드"""
+        if self.daily_inspection_data is None:
+            self.daily_inspection_data = self._load_excel_data("가압 날짜별 실적")
+        return self.daily_inspection_data
 
     def extract_kpi_data(self) -> dict:
         """엑셀에서 KPI 데이터 추출 (O4, O13, O14 셀 직접 읽기)"""
@@ -612,6 +619,334 @@ class PressureCharts(BaseVisualizer):
 
         except Exception as e:
             logger.error(f"❌ 외주사별 분기별 데이터 추출 실패: {e}")
+            flush_log(logger)
+            raise
+
+    def extract_model_inspection_defect_data(self, month: int = None) -> Dict:
+        """모델별 검사대수 및 불량건수 데이터 추출
+
+        Args:
+            month: 특정 월 필터링 (None이면 전체 기간, 월별 합산 방식)
+        """
+        try:
+            month_str = f"{month}월" if month else "전체"
+            logger.info(
+                f"📊 모델별 검사대수/불량건수 데이터 추출 시작... ({month_str})"
+            )
+
+            # 1. 검사대수 데이터 로드 (가압 날짜별 실적)
+            self.load_daily_inspection_data()
+            df_inspection = self.daily_inspection_data.copy()
+
+            # 2. 불량건수 데이터 로드 (가압 불량내역)
+            self.load_defect_data()
+            df_defect = self.defect_data.copy()
+
+            # 3. 월별 필터링
+            if month is not None:
+                # 검사대수: 검사일자 컬럼 사용
+                df_inspection["검사일자_pd"] = pd.to_datetime(
+                    df_inspection["검사일자"], errors="coerce"
+                )
+                df_inspection = df_inspection[
+                    df_inspection["검사일자_pd"].dt.month == month
+                ]
+
+                # 불량건수: 발생일 컬럼 사용
+                df_defect["발생일_pd"] = pd.to_datetime(
+                    df_defect["발생일"], errors="coerce"
+                )
+                df_defect = df_defect[df_defect["발생일_pd"].dt.month == month]
+
+                # 4. 검사대수 집계 (MODEL 컬럼 기준)
+                # 중복 검사 제외: 각 S/N당 1건으로 카운트
+                df_inspection_unique = df_inspection.drop_duplicates(subset=["S/N"])
+                inspection_by_model = df_inspection_unique["MODEL"].value_counts()
+            else:
+                # 전체 기간: 월별로 각각 S/N 중복 제거 후 합산 (월별 합계와 일치하도록)
+                df_inspection["검사일자_pd"] = pd.to_datetime(
+                    df_inspection["검사일자"], errors="coerce"
+                )
+                df_inspection["month"] = df_inspection["검사일자_pd"].dt.month
+
+                # 월별로 S/N 중복 제거 후 합산
+                inspection_by_model = {}
+                for m in df_inspection["month"].dropna().unique():
+                    monthly_df = df_inspection[df_inspection["month"] == m]
+                    monthly_unique = monthly_df.drop_duplicates(subset=["S/N"])
+                    for model, count in monthly_unique["MODEL"].value_counts().items():
+                        inspection_by_model[model] = (
+                            inspection_by_model.get(model, 0) + count
+                        )
+                inspection_by_model = pd.Series(inspection_by_model)
+
+            # 5. 불량건수 집계 (제품명 컬럼 기준)
+            df_defect_valid = df_defect[df_defect["제품명"].notna()]
+            if month is not None:
+                # 월별 필터링 시 해당 월 데이터만 집계
+                defect_by_model = df_defect_valid["제품명"].value_counts()
+            else:
+                # 전체 기간: 월별로 각각 집계 후 합산 (월별 합계와 일치하도록)
+                df_defect_valid = df_defect_valid.copy()
+                df_defect_valid["발생일_pd"] = pd.to_datetime(
+                    df_defect_valid["발생일"], errors="coerce"
+                )
+                df_defect_valid["month"] = df_defect_valid["발생일_pd"].dt.month
+
+                defect_by_model = {}
+                for m in df_defect_valid["month"].dropna().unique():
+                    monthly_defect = df_defect_valid[df_defect_valid["month"] == m]
+                    for model, count in monthly_defect["제품명"].value_counts().items():
+                        defect_by_model[model] = defect_by_model.get(model, 0) + count
+                defect_by_model = pd.Series(defect_by_model)
+
+            # 6. 모델명 통합 (검사대수와 불량건수 모두 있는 모델)
+            all_models = set(inspection_by_model.index) | set(defect_by_model.index)
+
+            # 7. 데이터 정리 (부품명 TOP3 포함)
+            model_data = []
+            for model in all_models:
+                if pd.isna(model) or str(model).strip() == "":
+                    continue
+                inspection_count = inspection_by_model.get(model, 0)
+                defect_count = defect_by_model.get(model, 0)
+                # 불량률 계산
+                defect_rate = (
+                    (defect_count / inspection_count * 100)
+                    if inspection_count > 0
+                    else 0
+                )
+
+                # 해당 모델의 주요 불량 부품 TOP3 추출
+                model_defects = df_defect_valid[df_defect_valid["제품명"] == model]
+                if len(model_defects) > 0 and "부품명" in model_defects.columns:
+                    part_counts = model_defects["부품명"].value_counts().head(3)
+                    top_parts = [
+                        f"{part}({count}건)"
+                        for part, count in part_counts.items()
+                        if pd.notna(part)
+                    ]
+                    top_parts_str = ", ".join(top_parts) if top_parts else "없음"
+                else:
+                    top_parts_str = "없음"
+
+                model_data.append(
+                    {
+                        "model": str(model),
+                        "inspection_count": int(inspection_count),
+                        "defect_count": int(defect_count),
+                        "defect_rate": round(defect_rate, 2),
+                        "top_parts": top_parts_str,
+                    }
+                )
+
+            # 8. 검사대수 기준 정렬
+            model_data.sort(key=lambda x: x["inspection_count"], reverse=True)
+
+            # 9. 상위 10개 모델 추출
+            top_models = model_data[:10]
+
+            result = {
+                "models": [m["model"] for m in top_models],
+                "inspection_counts": [m["inspection_count"] for m in top_models],
+                "defect_counts": [m["defect_count"] for m in top_models],
+                "defect_rates": [m["defect_rate"] for m in top_models],
+                "top_parts": [m["top_parts"] for m in top_models],
+            }
+
+            logger.info(
+                f"✅ 모델별 데이터 추출 완료 ({month_str}): TOP {len(top_models)}개 모델"
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"❌ 모델별 데이터 추출 실패: {e}")
+            flush_log(logger)
+            raise
+
+    def create_model_inspection_defect_chart(self) -> go.Figure:
+        """모델별 검사대수 및 불량건수 비교 차트 생성 (드롭다운 메뉴 포함)"""
+        try:
+            logger.info("📊 모델별 검사대수/불량건수 차트 생성 시작 (드롭다운 포함)...")
+
+            fig = go.Figure()
+
+            # 전체 데이터 + 월별 데이터 추출 (1~12월)
+            all_data = {"전체": self.extract_model_inspection_defect_data(month=None)}
+
+            # 데이터에 있는 월 확인
+            self.load_daily_inspection_data()
+            df_inspection = self.daily_inspection_data.copy()
+            df_inspection["검사일자_pd"] = pd.to_datetime(
+                df_inspection["검사일자"], errors="coerce"
+            )
+            available_months = sorted(
+                df_inspection["검사일자_pd"].dt.month.dropna().unique().astype(int)
+            )
+
+            for month in available_months:
+                all_data[f"{month}월"] = self.extract_model_inspection_defect_data(
+                    month=month
+                )
+
+            # 각 기간별로 trace 추가 (전체가 기본 visible)
+            trace_count = 0
+            for period, model_data in all_data.items():
+                is_visible = period == "전체"
+
+                # 호버용 customdata 준비 (검사대수, 불량건수, 불량률, 주요 불량부품)
+                customdata = list(
+                    zip(
+                        model_data["inspection_counts"],
+                        model_data["defect_counts"],
+                        model_data["defect_rates"],
+                        model_data["top_parts"],
+                    )
+                )
+
+                # 검사대수 (막대 차트)
+                fig.add_trace(
+                    go.Bar(
+                        x=model_data["models"],
+                        y=model_data["inspection_counts"],
+                        name="검사대수",
+                        marker_color="rgba(54, 162, 235, 0.7)",
+                        text=model_data["inspection_counts"],
+                        textposition="auto",
+                        customdata=customdata,
+                        hovertemplate=(
+                            "<b>%{x}</b><br>"
+                            "검사대수: %{y}대<br>"
+                            "불량건수: %{customdata[1]}건<br>"
+                            "불량률: %{customdata[2]:.1f}%<br>"
+                            "주요 불량부품: %{customdata[3]}"
+                            "<extra></extra>"
+                        ),
+                        visible=is_visible,
+                        showlegend=(period == "전체"),
+                    )
+                )
+
+                # 불량건수 (막대 차트)
+                fig.add_trace(
+                    go.Bar(
+                        x=model_data["models"],
+                        y=model_data["defect_counts"],
+                        name="불량건수",
+                        marker_color="rgba(255, 99, 132, 0.8)",
+                        text=model_data["defect_counts"],
+                        textposition="auto",
+                        customdata=customdata,
+                        hovertemplate=(
+                            "<b>%{x}</b><br>"
+                            "검사대수: %{customdata[0]}대<br>"
+                            "불량건수: %{y}건<br>"
+                            "불량률: %{customdata[2]:.1f}%<br>"
+                            "주요 불량부품: %{customdata[3]}"
+                            "<extra></extra>"
+                        ),
+                        visible=is_visible,
+                        showlegend=(period == "전체"),
+                    )
+                )
+
+                # 불량률 (선 차트)
+                fig.add_trace(
+                    go.Scatter(
+                        x=model_data["models"],
+                        y=model_data["defect_rates"],
+                        mode="lines+markers+text",
+                        name="불량률 (%)",
+                        line=dict(color="rgba(255, 159, 64, 1)", width=3),
+                        marker=dict(size=10, color="rgba(255, 159, 64, 1)"),
+                        text=[f"{rate:.1f}%" for rate in model_data["defect_rates"]],
+                        textposition="top center",
+                        textfont=dict(size=10, color="rgba(255, 159, 64, 1)"),
+                        customdata=customdata,
+                        hovertemplate=(
+                            "<b>%{x}</b><br>"
+                            "검사대수: %{customdata[0]}대<br>"
+                            "불량건수: %{customdata[1]}건<br>"
+                            "불량률: %{y:.1f}%<br>"
+                            "주요 불량부품: %{customdata[3]}"
+                            "<extra></extra>"
+                        ),
+                        visible=is_visible,
+                        showlegend=(period == "전체"),
+                        yaxis="y2",
+                    )
+                )
+
+                trace_count += 3
+
+            # 드롭다운 버튼 생성
+            dropdown_buttons = []
+            periods = list(all_data.keys())
+
+            for idx, period in enumerate(periods):
+                # 해당 기간의 trace만 보이도록 설정
+                visibility = [False] * trace_count
+                start_idx = idx * 3
+                visibility[start_idx] = True  # 검사대수
+                visibility[start_idx + 1] = True  # 불량건수
+                visibility[start_idx + 2] = True  # 불량률
+
+                dropdown_buttons.append(
+                    dict(
+                        label=period,
+                        method="update",
+                        args=[
+                            {"visible": visibility},
+                            {
+                                "title": f"모델별 검사대수 및 불량건수 비교 - {period} (TOP10)"
+                            },
+                        ],
+                    )
+                )
+
+            # 레이아웃 설정
+            fig.update_layout(
+                title={
+                    "text": "모델별 검사대수 및 불량건수 비교 - 전체 (TOP10)",
+                    "x": 0.5,
+                    "xanchor": "center",
+                    "font": {"size": 20, "family": "Arial, sans-serif"},
+                },
+                xaxis=dict(title="모델명", tickangle=45, tickfont=dict(size=11)),
+                yaxis=dict(title="건수 (검사대수 / 불량건수)"),
+                yaxis2=dict(
+                    title="불량률 (%)",
+                    overlaying="y",
+                    side="right",
+                ),
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+                ),
+                height=500,
+                template="plotly_white",
+                barmode="group",
+                updatemenus=[
+                    dict(
+                        buttons=dropdown_buttons,
+                        direction="down",
+                        pad={"r": 10, "t": 10},
+                        showactive=True,
+                        x=0.02,
+                        xanchor="left",
+                        y=1.18,
+                        yanchor="top",
+                    )
+                ],
+            )
+
+            logger.info(
+                f"✅ 모델별 검사대수/불량건수 차트 생성 완료 (드롭다운: {len(periods)}개 옵션)"
+            )
+            return fig
+
+        except Exception as e:
+            logger.error(f"❌ 모델별 차트 생성 실패: {e}")
             flush_log(logger)
             raise
 
