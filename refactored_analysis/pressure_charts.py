@@ -1013,7 +1013,7 @@ class PressureCharts(BaseVisualizer):
             # 레이아웃 설정
             fig.update_layout(
                 title={
-                    "text": "2025년 가압검사 불량 월별 트렌드",
+                    "text": "가압검사 불량 월별 트렌드",
                     "x": 0.5,
                     "xanchor": "center",
                     "font": {"size": 20, "family": "Arial, sans-serif"},
@@ -1795,7 +1795,14 @@ class PressureCharts(BaseVisualizer):
                         current_month_str = month
                         if "월" in current_month_str:
                             month_num = int(current_month_str.replace("월", ""))
-                            month_period = pd.Period(f"2025-{month_num:02d}")
+
+                            # 데이터에서 실제 연도 추출 (가장 최근 데이터의 연도 사용)
+                            if len(df["발생일_pd"].dropna()) > 0:
+                                year = df["발생일_pd"].dropna().dt.year.max()
+                            else:
+                                year = 2026  # 기본값
+
+                            month_period = pd.Period(f"{year}-{month_num:02d}")
 
                             # 해당 월 데이터 필터링
                             month_df = df[df["발생월"] == month_period]
